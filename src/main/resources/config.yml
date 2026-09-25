@@ -1,0 +1,5 @@
+settings:
+  metrics: false
+  debug: false
+  locale: en_US
+  timezone: UTC
