@@ -21,11 +21,12 @@ jobs:
         with:
           distribution: temurin
           java-version: '25'
-          cache: gradle
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-version: '9.1.0'
       - name: Build
-        run: ./gradlew build --no-daemon
+        run: gradle build --no-daemon
       - name: Upload artifact
         uses: actions/upload-artifact@v5
         with:
