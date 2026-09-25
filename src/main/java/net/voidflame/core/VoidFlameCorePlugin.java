@@ -10,6 +10,10 @@ import net.voidflame.core.storage.StorageService;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Comparator;
+
 public final class VoidFlameCorePlugin extends JavaPlugin {
     private CoreConfig configuration;
     private CoreLogger coreLogger;
@@ -43,7 +47,41 @@ public final class VoidFlameCorePlugin extends JavaPlugin {
         getServer().getServicesManager().register(DatabaseService.class, database, this, ServicePriority.Highest);
         getServer().getServicesManager().register(StorageService.class, storage, this, ServicePriority.Highest);
 
+        scheduleBackups();
         coreLogger.info("VoidFlame-Core enabled. Database: " + database.databasePath());
+    }
+
+    private void scheduleBackups() {
+        if (!getConfig().getBoolean("database.backups.enabled", true)) return;
+        long minutes = Math.max(5L, getConfig().getLong("database.backups.interval-minutes", 30L));
+        long ticks = minutes * 60L * 20L;
+        getServer().getScheduler().runTaskTimer(this, this::backupDatabase, ticks, ticks);
+    }
+
+    private void backupDatabase() {
+        database.backup(getDataFolder().toPath().resolve("backups"))
+                .thenAccept(path -> {
+                    pruneBackups();
+                    coreLogger.info("Database backup created: " + path.getFileName());
+                })
+                .exceptionally(error -> {
+                    coreLogger.error("Database backup failed.", error);
+                    return null;
+                });
+    }
+
+    private void pruneBackups() {
+        int keep = Math.max(1, getConfig().getInt("database.backups.keep", 10));
+        Path directory = getDataFolder().toPath().resolve("backups");
+        try (var stream = Files.list(directory)) {
+            var backups = stream
+                    .filter(path -> path.getFileName().toString().startsWith("database-") && path.toString().endsWith(".db"))
+                    .sorted(Comparator.comparing(Path::toString).reversed())
+                    .toList();
+            for (int i = keep; i < backups.size(); i++) Files.deleteIfExists(backups.get(i));
+        } catch (Exception ex) {
+            coreLogger.error("Unable to prune database backups.", ex);
+        }
     }
 
     @Override
