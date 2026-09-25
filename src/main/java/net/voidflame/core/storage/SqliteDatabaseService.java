@@ -34,7 +34,7 @@ public final class SqliteDatabaseService implements DatabaseService {
     }
 
     private void initialize() {
-        try (Connection connection = dataSource.getConnection(); Statement statement = connection.createStatement()) {
+        try (Connection connection = dataSource.getConnection(); java.sql.Statement statement = connection.createStatement()) {
             statement.execute("PRAGMA journal_mode=WAL");
             statement.execute("PRAGMA foreign_keys=ON");
             statement.execute("PRAGMA busy_timeout=5000");
@@ -145,7 +145,7 @@ public final class SqliteDatabaseService implements DatabaseService {
                 String timestamp = Instant.now().toString().replace(":", "-");
                 Path target = directory.resolve("database-" + timestamp + ".db");
                 String escaped = target.toAbsolutePath().toString().replace("'", "''");
-                try (Connection connection = dataSource.getConnection(); Statement statement = connection.createStatement()) {
+                try (Connection connection = dataSource.getConnection(); java.sql.Statement statement = connection.createStatement()) {
                     statement.execute("VACUUM INTO '" + escaped + "'");
                 }
                 return target;
