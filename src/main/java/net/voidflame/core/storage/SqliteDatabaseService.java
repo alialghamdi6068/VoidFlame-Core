@@ -24,7 +24,7 @@ public final class SqliteDatabaseService implements DatabaseService {
         this.file = dataFolder.resolve("database.db");
         this.dataSource = new SQLiteDataSource();
         this.dataSource.setUrl("jdbc:sqlite:" + file.toAbsolutePath());
-        this.executor = Executors.newFixedThreadPool(2, runnable -> {
+        this.executor = Executors.newFixedThreadPool(Math.max(2, Math.min(4, Runtime.getRuntime().availableProcessors())), runnable -> {
             Thread thread = new Thread(runnable, "VoidFlame-Core-Database");
             thread.setDaemon(true);
             return thread;
@@ -169,5 +169,14 @@ public final class SqliteDatabaseService implements DatabaseService {
         if (!open) return;
         open = false;
         executor.shutdown();
+        try {
+            if (!executor.awaitTermination(10, java.util.concurrent.TimeUnit.SECONDS)) {
+                executor.shutdownNow();
+                executor.awaitTermination(2, java.util.concurrent.TimeUnit.SECONDS);
+            }
+        } catch (InterruptedException interrupted) {
+            executor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 }
