@@ -7,14 +7,19 @@ import net.voidflame.core.scheduler.CoreScheduler;
 import net.voidflame.core.storage.DatabaseService;
 import net.voidflame.core.storage.SqliteDatabaseService;
 import net.voidflame.core.storage.StorageService;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
+import java.util.UUID;
 
-public final class VoidFlameCorePlugin extends JavaPlugin {
+public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
     private CoreConfig configuration;
     private CoreLogger coreLogger;
     private CoreScheduler scheduler;
@@ -43,9 +48,18 @@ public final class VoidFlameCorePlugin extends JavaPlugin {
             return;
         }
 
+        String serverId = getConfig().getString("server-id");
+        if (serverId == null || serverId.isBlank()) {
+            serverId = UUID.randomUUID().toString();
+            getConfig().set("server-id", serverId);
+            saveConfig();
+        }
+        storage.put("core", "server-id", serverId);
+
         getServer().getServicesManager().register(ServiceRegistry.class, services, this, ServicePriority.Highest);
         getServer().getServicesManager().register(DatabaseService.class, database, this, ServicePriority.Highest);
         getServer().getServicesManager().register(StorageService.class, storage, this, ServicePriority.Highest);
+        getServer().getPluginManager().registerEvents(this, this);
 
         scheduleBackups();
         coreLogger.info("VoidFlame-Core enabled. Database: " + database.databasePath());
@@ -82,6 +96,16 @@ public final class VoidFlameCorePlugin extends JavaPlugin {
         } catch (Exception ex) {
             coreLogger.error("Unable to prune database backups.", ex);
         }
+    }
+
+    @EventHandler
+    public void onJoin(PlayerJoinEvent event) {
+        storage.upsertPlayer(event.getPlayer().getUniqueId(), event.getPlayer().getName());
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        storage.upsertPlayer(event.getPlayer().getUniqueId(), event.getPlayer().getName());
     }
 
     @Override
