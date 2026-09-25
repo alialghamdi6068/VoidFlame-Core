@@ -3,3 +3,9 @@ settings:
   debug: false
   locale: en_US
   timezone: UTC
+
+database:
+  backups:
+    enabled: true
+    interval-minutes: 30
+    keep: 10
