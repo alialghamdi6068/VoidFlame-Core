@@ -1,0 +1,13 @@
+name: VoidFlame-Core
+version: 1.0.0
+main: net.voidflame.core.VoidFlameCorePlugin
+description: Shared foundation and API for the VoidFlame Minecraft server.
+author: VoidFlame
+website: https://github.com/alialghamdi6068/VoidFlame-Core
+api-version: '26.2'
+load: STARTUP
+prefix: VoidFlame-Core
+permissions:
+  voidflame.core.admin:
+    description: Administrative access to VoidFlame Core diagnostics.
+    default: op
