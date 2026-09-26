@@ -4,26 +4,36 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class PlayerProfileService {
     private final DatabaseService database;
+    private final ConcurrentHashMap<UUID, PlayerProfile> cache = new ConcurrentHashMap<>();
 
     public PlayerProfileService(DatabaseService database) {
         this.database = database;
     }
 
     public CompletableFuture<PlayerProfile> load(UUID uuid, String name) {
+        PlayerProfile cached = cache.get(uuid);
+        if (cached != null) return CompletableFuture.completedFuture(cached);
         return database.query("""
                 SELECT uuid,name,first_join,last_join,coins,wins,losses,winstreak,best_winstreak,elo,rank,preferences_json,statistics_json
                 FROM player_profiles WHERE uuid=?
                 """, uuid.toString()).thenCompose(rows -> {
-            if (!rows.isEmpty()) return CompletableFuture.completedFuture(map(rows.getFirst()));
+            if (!rows.isEmpty()) {
+                PlayerProfile profile = map(rows.getFirst());
+                cache.put(uuid, profile);
+                return CompletableFuture.completedFuture(profile);
+            }
             PlayerProfile profile = PlayerProfile.defaults(uuid, name, System.currentTimeMillis());
+            cache.put(uuid, profile);
             return save(profile).thenApply(ignored -> profile);
         });
     }
 
     public CompletableFuture<Void> save(PlayerProfile profile) {
+        cache.put(profile.uuid(), profile);
         return database.execute("""
                 INSERT INTO player_profiles(uuid,name,first_join,last_join,coins,wins,losses,winstreak,best_winstreak,elo,rank,preferences_json,statistics_json)
                 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
@@ -37,6 +47,10 @@ public final class PlayerProfileService {
                 profile.coins(), profile.wins(), profile.losses(), profile.winstreak(), profile.bestWinstreak(),
                 profile.elo(), profile.rank(), profile.preferencesJson(), profile.statisticsJson());
     }
+
+    public void invalidate(UUID uuid) { cache.remove(uuid); }
+
+    public void clearCache() { cache.clear(); }
 
     public CompletableFuture<Void> touch(UUID uuid, String name) {
         long now = System.currentTimeMillis();
