@@ -47,7 +47,7 @@ public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
 
         try {
             database = new SqliteDatabaseService(getDataFolder().toPath());
-            storage = new StorageService(database);
+            storage = new SqliteStorageService(database);
             playerProfiles = new PlayerProfileService(database);
         } catch (RuntimeException ex) {
             coreLogger.error("Failed to initialize the VoidFlame database.", ex);
