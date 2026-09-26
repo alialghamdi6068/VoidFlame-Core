@@ -7,17 +7,33 @@ website: https://github.com/alialghamdi6068/VoidFlame-Core
 api-version: '26.2'
 load: STARTUP
 prefix: VoidFlame-Core
+
+commands:
+  worlds:
+    description: List all available VoidFlame worlds.
+    usage: /worlds
+    permission: voidflame.core.worlds.use
+  world:
+    description: Teleport to an available world spawn.
+    usage: /world <world>
+    aliases: [worldtp]
+    permission: voidflame.core.worlds.use
+  spawn:
+    description: Teleport to a world spawn.
+    usage: /spawn [world]
+    permission: voidflame.core.worlds.use
+  vfworld:
+    description: Administrative VoidFlame world manager.
+    usage: /vfworld <help|list|info|enable|disable|tp|setspawn|reload> [world]
+    permission: voidflame.core.worlds.admin
+
 permissions:
   voidflame.core.admin:
     description: Administrative access to VoidFlame Core diagnostics.
     default: op
-
-commands:
-  vfworld:
-    description: Manage VoidFlame worlds.
-    usage: /vfworld <list|enable|disable|tp|reload> <world>
-    permission: voidflame.core.worlds
-permissions:
-  voidflame.core.worlds:
-    description: Manage and teleport between VoidFlame worlds.
+  voidflame.core.worlds.use:
+    description: Allows players to list and teleport between enabled VoidFlame worlds.
+    default: true
+  voidflame.core.worlds.admin:
+    description: Allows full VoidFlame world administration.
     default: op
