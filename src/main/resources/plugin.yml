@@ -1,7 +1,7 @@
 name: VoidFlame-Core
 version: 1.0.0
 main: net.voidflame.core.VoidFlameCorePlugin
-description: Shared foundation and API for the VoidFlame Minecraft server.
+description: Shared foundation and API for the VoidFlame practice server.
 author: VoidFlame
 website: https://github.com/alialghamdi6068/VoidFlame-Core
 api-version: '26.2'
@@ -10,12 +10,12 @@ prefix: VoidFlame-Core
 
 commands:
   spawn:
-    description: Return to the practice spawn.
+    description: Return to the VoidFlame spawn.
     usage: /spawn
     permission: voidflame.spawn
   vfworld:
     description: Administrative VoidFlame world manager.
-    usage: /vfworld <help|list|info|enable|disable|tp|setspawn|reload> [world]
+    usage: /vfworld <help|list|info|enable|disable|load|unload|tp|setspawn|reload> [world]
     permission: voidflame.world.manage
 
 permissions:
@@ -24,7 +24,4 @@ permissions:
     default: true
   voidflame.world.manage:
     description: Manage practice worlds.
-    default: op
-  voidflame.core.admin:
-    description: Administrative access to VoidFlame Core diagnostics.
     default: op
