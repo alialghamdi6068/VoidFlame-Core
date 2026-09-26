@@ -11,6 +11,7 @@ public interface DatabaseService extends AutoCloseable {
     CompletableFuture<Integer> update(String sql, Object... parameters);
     CompletableFuture<Void> transaction(List<Statement> statements);
     CompletableFuture<Path> backup(Path directory);
+    CompletableFuture<Void> restore(Path backupFile);
     boolean isOpen();
     String databasePath();
     record Statement(String sql, Object... parameters) {}
