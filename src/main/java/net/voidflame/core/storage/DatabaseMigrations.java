@@ -122,7 +122,7 @@ final class DatabaseMigrations {
                         timestamp INTEGER NOT NULL,
                         replay_data BLOB
                     );
-                    """)
+                    """),
                 new Migration(3, """
                     CREATE INDEX IF NOT EXISTS idx_player_profiles_elo ON player_profiles(elo DESC);
                     CREATE INDEX IF NOT EXISTS idx_player_profiles_last_join ON player_profiles(last_join DESC);
