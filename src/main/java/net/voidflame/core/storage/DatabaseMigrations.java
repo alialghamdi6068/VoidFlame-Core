@@ -30,16 +30,6 @@ final class DatabaseMigrations {
                         PRIMARY KEY (module, data_key)
                     );
                     """),
-                new Migration(3, """
-                    CREATE INDEX IF NOT EXISTS idx_player_profiles_elo ON player_profiles(elo DESC);
-                    CREATE INDEX IF NOT EXISTS idx_player_profiles_last_join ON player_profiles(last_join DESC);
-                    CREATE INDEX IF NOT EXISTS idx_duel_matches_timestamp ON duel_matches(timestamp DESC);
-                    CREATE INDEX IF NOT EXISTS idx_duel_matches_players ON duel_matches(player_a, player_b);
-                    CREATE INDEX IF NOT EXISTS idx_reports_status_timestamp ON reports(status, timestamp DESC);
-                    CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs(timestamp DESC);
-                    CREATE INDEX IF NOT EXISTS idx_audit_logs_actor ON audit_logs(actor);
-                    CREATE INDEX IF NOT EXISTS idx_module_data_updated_at ON module_data(updated_at DESC);
-                    """),
                 new Migration(2, """
                     CREATE TABLE IF NOT EXISTS player_profiles (
                         uuid TEXT PRIMARY KEY,
@@ -175,3 +165,13 @@ final class DatabaseMigrations {
 
     private record Migration(int version, String sql) {}
 }
+                new Migration(3, """
+                    CREATE INDEX IF NOT EXISTS idx_player_profiles_elo ON player_profiles(elo DESC);
+                    CREATE INDEX IF NOT EXISTS idx_player_profiles_last_join ON player_profiles(last_join DESC);
+                    CREATE INDEX IF NOT EXISTS idx_duel_matches_timestamp ON duel_matches(timestamp DESC);
+                    CREATE INDEX IF NOT EXISTS idx_duel_matches_players ON duel_matches(player_a, player_b);
+                    CREATE INDEX IF NOT EXISTS idx_reports_status_timestamp ON reports(status, timestamp DESC);
+                    CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs(timestamp DESC);
+                    CREATE INDEX IF NOT EXISTS idx_audit_logs_actor ON audit_logs(actor);
+                    CREATE INDEX IF NOT EXISTS idx_module_data_updated_at ON module_data(updated_at DESC);
+                    """),
