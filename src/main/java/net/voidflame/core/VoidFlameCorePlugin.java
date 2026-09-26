@@ -9,6 +9,7 @@ import net.voidflame.core.storage.SqliteDatabaseService;
 import net.voidflame.core.storage.StorageService;
 import net.voidflame.core.storage.SqliteStorageService;
 import net.voidflame.core.storage.PlayerProfileService;
+import net.voidflame.core.storage.PlayerSettingsService;
 import net.voidflame.core.world.WorldCommands;
 import net.voidflame.core.world.WorldService;
 import org.bukkit.Bukkit;
