@@ -32,6 +32,7 @@ public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
     private DatabaseService database;
     private StorageService storage;
     private PlayerProfileService playerProfiles;
+    private PlayerSettingsService playerSettings;
     private WorldService worlds;
 
     @Override
@@ -50,6 +51,7 @@ public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
             database = new SqliteDatabaseService(getDataFolder().toPath());
             storage = new SqliteStorageService(database);
             playerProfiles = new PlayerProfileService(database);
+            playerSettings = new PlayerSettingsService(storage);
         } catch (RuntimeException ex) {
             coreLogger.error("Failed to initialize the VoidFlame database.", ex);
             getServer().getPluginManager().disablePlugin(this);
@@ -67,11 +69,13 @@ public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
         worlds = new WorldService(this);
         services.register(WorldService.class, worlds);
         services.register(PlayerProfileService.class, playerProfiles);
+        services.register(PlayerSettingsService.class, playerSettings);
 
         getServer().getServicesManager().register(ServiceRegistry.class, services, this, ServicePriority.Highest);
         getServer().getServicesManager().register(DatabaseService.class, database, this, ServicePriority.Highest);
         getServer().getServicesManager().register(StorageService.class, storage, this, ServicePriority.Highest);
         getServer().getServicesManager().register(PlayerProfileService.class, playerProfiles, this, ServicePriority.Highest);
+        getServer().getServicesManager().register(PlayerSettingsService.class, playerSettings, this, ServicePriority.Highest);
 
         WorldCommands worldCommands = new WorldCommands(worlds);
         getCommand("spawn").setExecutor(worldCommands);
@@ -145,6 +149,7 @@ public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
         getServer().getServicesManager().unregister(DatabaseService.class, this);
         getServer().getServicesManager().unregister(StorageService.class, this);
         getServer().getServicesManager().unregister(PlayerProfileService.class, this);
+        getServer().getServicesManager().unregister(PlayerSettingsService.class, this);
         getServer().getServicesManager().unregister(ServiceRegistry.class, this);
         if (services != null) services.clear();
         if (scheduler != null) scheduler.cancelAll();
@@ -159,5 +164,6 @@ public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
     public DatabaseService database() { return database; }
     public StorageService storage() { return storage; }
     public PlayerProfileService playerProfiles() { return playerProfiles; }
+    public PlayerSettingsService playerSettings() { return playerSettings; }
     public WorldService worlds() { return worlds; }
 }
