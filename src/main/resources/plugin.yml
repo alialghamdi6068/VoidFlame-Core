@@ -13,6 +13,10 @@ commands:
     description: Return to the VoidFlame spawn.
     usage: /spawn
     permission: voidflame.spawn
+  vfrestore:
+    description: Restore a validated Core database backup.
+    usage: /vfrestore <backup-file>
+    permission: voidflame.database.restore
   vfworld:
     description: Administrative VoidFlame world manager.
     usage: /vfworld <help|list|info|enable|disable|load|unload|tp|setspawn|reload> [world]
@@ -22,6 +26,9 @@ permissions:
   voidflame.spawn:
     description: Return to the main practice spawn.
     default: true
+  voidflame.database.restore:
+    description: Restore a validated Core database backup.
+    default: op
   voidflame.world.manage:
     description: Manage practice worlds.
     default: op
