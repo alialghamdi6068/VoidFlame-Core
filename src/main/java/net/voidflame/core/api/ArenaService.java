@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
 public interface ArenaService {
     Optional<ArenaHandle> acquireAvailable();
     CompletableFuture<Boolean> reset(String arenaName);
-    int availableCount();
+    long availableCount();
     List<String> allNames();
 
     record ArenaHandle(String name, Location spawnA, Location spawnB) {
