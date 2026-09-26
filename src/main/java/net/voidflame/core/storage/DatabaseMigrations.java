@@ -9,7 +9,10 @@ final class DatabaseMigrations {
     private DatabaseMigrations() {}
 
     static void apply(Connection connection) throws SQLException {
-        ensureTable(connection);
+        boolean previousAutoCommit = connection.getAutoCommit();
+        connection.setAutoCommit(false);
+        try {
+            ensureTable(connection);
         List<Migration> migrations = List.of(
                 new Migration(1, """
                     CREATE TABLE IF NOT EXISTS server_meta (
@@ -149,6 +152,13 @@ final class DatabaseMigrations {
                 statement.setString(2, Instant.now().toString());
                 statement.executeUpdate();
             }
+        }
+            connection.commit();
+        } catch (SQLException error) {
+            try { connection.rollback(); } catch (SQLException rollback) { error.addSuppressed(rollback); }
+            throw error;
+        } finally {
+            connection.setAutoCommit(previousAutoCommit);
         }
     }
 
