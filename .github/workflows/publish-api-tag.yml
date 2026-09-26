@@ -1,0 +1,19 @@
+name: Publish source API tag
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  tag-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Update api tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f api "$GITHUB_SHA"
+          git push origin refs/tags/api --force
