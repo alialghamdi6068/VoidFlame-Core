@@ -9,31 +9,22 @@ load: STARTUP
 prefix: VoidFlame-Core
 
 commands:
-  worlds:
-    description: List all available VoidFlame worlds.
-    usage: /worlds
-    permission: voidflame.core.worlds.use
-  world:
-    description: Teleport to an available world spawn.
-    usage: /world <world>
-    aliases: [worldtp]
-    permission: voidflame.core.worlds.use
   spawn:
-    description: Teleport to a world spawn.
-    usage: /spawn [world]
-    permission: voidflame.core.worlds.use
+    description: Return to the practice spawn.
+    usage: /spawn
+    permission: voidflame.spawn
   vfworld:
     description: Administrative VoidFlame world manager.
     usage: /vfworld <help|list|info|enable|disable|tp|setspawn|reload> [world]
-    permission: voidflame.core.worlds.admin
+    permission: voidflame.world.manage
 
 permissions:
+  voidflame.spawn:
+    description: Return to the main practice spawn.
+    default: true
+  voidflame.world.manage:
+    description: Manage practice worlds.
+    default: op
   voidflame.core.admin:
     description: Administrative access to VoidFlame Core diagnostics.
-    default: op
-  voidflame.core.worlds.use:
-    description: Allows players to list and teleport between enabled VoidFlame worlds.
-    default: true
-  voidflame.core.worlds.admin:
-    description: Allows full VoidFlame world administration.
     default: op
