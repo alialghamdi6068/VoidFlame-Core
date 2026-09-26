@@ -89,12 +89,15 @@ public final class SqliteDatabaseService implements DatabaseService {
         return CompletableFuture.runAsync(() -> {
             lifecycleLock.readLock().lock();
             try {
-            try (Connection connection = openConnection();
-                 PreparedStatement statement = prepare(connection, sql, parameters)) {
-                statement.execute();
-            } catch (SQLException e) {
-                throw new IllegalStateException("Database execution failed.", e);
-            } finally { lifecycleLock.readLock().unlock(); }
+                try (Connection connection = openConnection();
+                     PreparedStatement statement = prepare(connection, sql, parameters)) {
+                    statement.execute();
+                } catch (SQLException e) {
+                    throw new IllegalStateException("Database execution failed.", e);
+                }
+            } finally {
+                lifecycleLock.readLock().unlock();
+            }
         }, executor);
     }
 
