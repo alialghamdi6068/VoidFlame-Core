@@ -11,7 +11,7 @@ class SqliteDatabaseServiceTest {
     @Test
     void createsSingleDatabaseAndPersistsData(@TempDir Path temp) {
         SqliteDatabaseService db = new SqliteDatabaseService(temp);
-        StorageService storage = new StorageService(db);
+        StorageService storage = new SqliteStorageService(db);
         storage.put("test", "key", "value").join();
         assertTrue(db.databasePath().endsWith("database.db"));
         assertEquals("value", storage.get("test", "key").join());
