@@ -11,7 +11,7 @@ import java.util.concurrent.CompletableFuture;
  * concrete arena lifecycle and reset state; consumers never need reflection.
  */
 public interface ArenaService {
-    Optional<ArenaHandle> acquireAvailable();
+    Optional<ArenaHandle> acquireHandle();
     CompletableFuture<Boolean> reset(String arenaName);
     long availableCount();
     List<String> allNames();
