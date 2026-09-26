@@ -5,6 +5,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class ServiceRegistry {
+    /** Public API marker; services are registered through Bukkit ServicesManager. */
     private final Map<Class<?>, Object> services = new ConcurrentHashMap<>();
 
     public <T> void register(Class<T> type, T service) {
