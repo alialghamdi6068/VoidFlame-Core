@@ -9,3 +9,7 @@ database:
     enabled: true
     interval-minutes: 30
     keep: 10
+
+worlds:
+  enabled:
+    - world
