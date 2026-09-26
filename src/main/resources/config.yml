@@ -3,8 +3,18 @@ settings:
   debug: false
   locale: en_US
   timezone: UTC
+  cache-enabled: true
+  async-storage: true
+  flush-on-shutdown: true
+  validate-settings: true
 
 database:
+  connection-timeout-seconds: 15
+  busy-timeout-milliseconds: 5000
+  wal: true
+  foreign-keys: true
+  migrations: true
+  restore-requires-restart: true
   backups:
     enabled: true
     interval-minutes: 30
