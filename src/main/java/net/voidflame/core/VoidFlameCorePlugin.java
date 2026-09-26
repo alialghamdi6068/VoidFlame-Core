@@ -7,6 +7,11 @@ import net.voidflame.core.scheduler.CoreScheduler;
 import net.voidflame.core.storage.DatabaseService;
 import net.voidflame.core.storage.SqliteDatabaseService;
 import net.voidflame.core.storage.StorageService;
+import net.voidflame.core.world.WorldService;
+import org.bukkit.Bukkit;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -18,6 +23,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.UUID;
+import java.util.List;
+import java.util.ArrayList;
 
 public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
     private CoreConfig configuration;
@@ -26,6 +33,7 @@ public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
     private ServiceRegistry services;
     private DatabaseService database;
     private StorageService storage;
+    private WorldService worlds;
 
     @Override
     public void onLoad() {
@@ -55,6 +63,10 @@ public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
             saveConfig();
         }
         storage.put("core", "server-id", serverId);
+        worlds = new WorldService(this);
+        Bukkit.getScheduler().runTask(this, this::loadEnabledWorlds);
+        Objects.requireNonNull(getCommand("vfworld"), "vfworld command missing from plugin.yml").setExecutor(this::worldCommand);
+        Objects.requireNonNull(getCommand("vfworld"), "vfworld command missing from plugin.yml").setTabCompleter((sender, command, alias, args) -> worldTabComplete(args));
 
         getServer().getServicesManager().register(ServiceRegistry.class, services, this, ServicePriority.Highest);
         getServer().getServicesManager().register(DatabaseService.class, database, this, ServicePriority.Highest);
@@ -63,6 +75,40 @@ public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
 
         scheduleBackups();
         coreLogger.info("VoidFlame-Core enabled. Database: " + database.databasePath());
+    }
+
+    private void loadEnabledWorlds() {
+        for (String name : worlds.enabledWorlds()) {
+            try { worlds.load(name); coreLogger.info("World enabled: " + name); }
+            catch (Exception ex) { coreLogger.error("Failed to enable world: " + name, ex); }
+        }
+    }
+
+    private boolean worldCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (!sender.hasPermission("voidflame.core.worlds")) { sender.sendMessage("§cNo permission."); return true; }
+        if (args.length == 0 || args[0].equalsIgnoreCase("list")) {
+            sender.sendMessage("§5§lVoidFlame Worlds §8• §7Loaded: §f" + Bukkit.getWorlds().size());
+            for (var world : Bukkit.getWorlds()) sender.sendMessage("§8• §d" + world.getName() + " §7" + world.getEnvironment().name());
+            return true;
+        }
+        try {
+            switch (args[0].toLowerCase(java.util.Locale.ROOT)) {
+                case "enable", "load" -> { requireArg(args); worlds.enable(args[1]); sender.sendMessage("§aWorld enabled: §f" + args[1]); }
+                case "disable", "unload" -> { requireArg(args); worlds.disable(args[1]); sender.sendMessage("§eWorld disabled: §f" + args[1]); }
+                case "tp", "teleport" -> { if (!(sender instanceof Player player)) { sender.sendMessage("§cPlayers only."); return true; } requireArg(args); worlds.teleport(player, args[1]); }
+                case "reload" -> { worlds.loadConfiguredWorlds(); loadEnabledWorlds(); sender.sendMessage("§aWorld configuration reloaded."); }
+                default -> sender.sendMessage("§7/vfworld <list|enable|disable|tp|reload> <world>");
+            }
+        } catch (Exception ex) { sender.sendMessage("§c" + ex.getMessage()); }
+        return true;
+    }
+
+    private void requireArg(String[] args) { if (args.length < 2 || args[1].isBlank()) throw new IllegalArgumentException("World name is required."); }
+
+    private List<String> worldTabComplete(String[] args) {
+        if (args.length == 1) return List.of("list", "enable", "load", "disable", "unload", "tp", "teleport", "reload");
+        if (args.length == 2 && !args[0].equalsIgnoreCase("list") && !args[0].equalsIgnoreCase("reload")) return new ArrayList<>(Bukkit.getWorlds().stream().map(org.bukkit.World::getName).sorted().toList());
+        return List.of();
     }
 
     private void scheduleBackups() {
