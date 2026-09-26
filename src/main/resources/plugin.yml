@@ -11,3 +11,13 @@ permissions:
   voidflame.core.admin:
     description: Administrative access to VoidFlame Core diagnostics.
     default: op
+
+commands:
+  vfworld:
+    description: Manage VoidFlame worlds.
+    usage: /vfworld <list|enable|disable|tp|reload> <world>
+    permission: voidflame.core.worlds
+permissions:
+  voidflame.core.worlds:
+    description: Manage and teleport between VoidFlame worlds.
+    default: op
