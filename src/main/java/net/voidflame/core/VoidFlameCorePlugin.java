@@ -10,6 +10,7 @@ import net.voidflame.core.storage.StorageService;
 import net.voidflame.core.storage.SqliteStorageService;
 import net.voidflame.core.storage.PlayerProfileService;
 import net.voidflame.core.storage.PlayerSettingsService;
+import net.voidflame.core.storage.ServerSettingsService;
 import net.voidflame.core.world.WorldCommands;
 import net.voidflame.core.world.WorldService;
 import org.bukkit.Bukkit;
@@ -34,6 +35,7 @@ public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
     private StorageService storage;
     private PlayerProfileService playerProfiles;
     private PlayerSettingsService playerSettings;
+    private ServerSettingsService serverSettings;
     private WorldService worlds;
 
     @Override
@@ -53,6 +55,7 @@ public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
             storage = new SqliteStorageService(database);
             playerProfiles = new PlayerProfileService(database);
             playerSettings = new PlayerSettingsService(storage);
+            serverSettings = new ServerSettingsService(storage);
         } catch (RuntimeException ex) {
             coreLogger.error("Failed to initialize the VoidFlame database.", ex);
             getServer().getPluginManager().disablePlugin(this);
@@ -71,18 +74,21 @@ public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
         services.register(WorldService.class, worlds);
         services.register(PlayerProfileService.class, playerProfiles);
         services.register(PlayerSettingsService.class, playerSettings);
+        services.register(ServerSettingsService.class, serverSettings);
 
         getServer().getServicesManager().register(ServiceRegistry.class, services, this, ServicePriority.Highest);
         getServer().getServicesManager().register(DatabaseService.class, database, this, ServicePriority.Highest);
         getServer().getServicesManager().register(StorageService.class, storage, this, ServicePriority.Highest);
         getServer().getServicesManager().register(PlayerProfileService.class, playerProfiles, this, ServicePriority.Highest);
         getServer().getServicesManager().register(PlayerSettingsService.class, playerSettings, this, ServicePriority.Highest);
+        getServer().getServicesManager().register(ServerSettingsService.class, serverSettings, this, ServicePriority.Highest);
 
         WorldCommands worldCommands = new WorldCommands(worlds);
         getCommand("spawn").setExecutor(worldCommands);
         getCommand("spawn").setTabCompleter(worldCommands);
         getCommand("vfworld").setExecutor(worldCommands);
         getCommand("vfworld").setTabCompleter(worldCommands);
+        getCommand("vfrestore").setExecutor(new RestoreCommand(this));
 
         getServer().getPluginManager().registerEvents(this, this);
         Bukkit.getScheduler().runTask(this, this::loadEnabledWorlds);
@@ -151,6 +157,7 @@ public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
         getServer().getServicesManager().unregister(StorageService.class, this);
         getServer().getServicesManager().unregister(PlayerProfileService.class, this);
         getServer().getServicesManager().unregister(PlayerSettingsService.class, this);
+        getServer().getServicesManager().unregister(ServerSettingsService.class, this);
         getServer().getServicesManager().unregister(ServiceRegistry.class, this);
         if (services != null) services.clear();
         if (scheduler != null) scheduler.cancelAll();
@@ -166,5 +173,6 @@ public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
     public StorageService storage() { return storage; }
     public PlayerProfileService playerProfiles() { return playerProfiles; }
     public PlayerSettingsService playerSettings() { return playerSettings; }
+    public ServerSettingsService serverSettings() { return serverSettings; }
     public WorldService worlds() { return worlds; }
 }
