@@ -20,6 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public final class SqliteDatabaseService implements DatabaseService {
     private static final DateTimeFormatter BACKUP_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmm");
@@ -28,6 +29,7 @@ public final class SqliteDatabaseService implements DatabaseService {
     private final SQLiteDataSource dataSource;
     private final ExecutorService executor;
     private volatile boolean open;
+    private final ReentrantReadWriteLock lifecycleLock = new ReentrantReadWriteLock(true);
 
     public SqliteDatabaseService(Path dataFolder) {
         try {
@@ -85,12 +87,14 @@ public final class SqliteDatabaseService implements DatabaseService {
     public CompletableFuture<Void> execute(String sql, Object... parameters) {
         ensureOpen();
         return CompletableFuture.runAsync(() -> {
+            lifecycleLock.readLock().lock();
+            try {
             try (Connection connection = openConnection();
                  PreparedStatement statement = prepare(connection, sql, parameters)) {
                 statement.execute();
             } catch (SQLException e) {
                 throw new IllegalStateException("Database execution failed.", e);
-            }
+            } finally { lifecycleLock.readLock().unlock(); }
         }, executor);
     }
 
@@ -98,12 +102,13 @@ public final class SqliteDatabaseService implements DatabaseService {
     public CompletableFuture<Integer> update(String sql, Object... parameters) {
         ensureOpen();
         return CompletableFuture.supplyAsync(() -> {
+            lifecycleLock.readLock().lock();
             try (Connection connection = openConnection();
                  PreparedStatement statement = prepare(connection, sql, parameters)) {
                 return statement.executeUpdate();
             } catch (SQLException e) {
                 throw new IllegalStateException("Database update failed.", e);
-            }
+            } finally { lifecycleLock.readLock().unlock(); }
         }, executor);
     }
 
@@ -111,6 +116,7 @@ public final class SqliteDatabaseService implements DatabaseService {
     public CompletableFuture<List<Map<String, Object>>> query(String sql, Object... parameters) {
         ensureOpen();
         return CompletableFuture.supplyAsync(() -> {
+            lifecycleLock.readLock().lock();
             try (Connection connection = openConnection();
                  PreparedStatement statement = prepare(connection, sql, parameters);
                  ResultSet result = statement.executeQuery()) {
@@ -127,7 +133,7 @@ public final class SqliteDatabaseService implements DatabaseService {
                 return rows;
             } catch (SQLException e) {
                 throw new IllegalStateException("Database query failed.", e);
-            }
+            } finally { lifecycleLock.readLock().unlock(); }
         }, executor);
     }
 
@@ -137,6 +143,7 @@ public final class SqliteDatabaseService implements DatabaseService {
         if (statements == null || statements.isEmpty()) return CompletableFuture.completedFuture(null);
 
         return CompletableFuture.runAsync(() -> {
+            lifecycleLock.readLock().lock();
             try (Connection connection = openConnection()) {
                 connection.setAutoCommit(false);
                 try {
@@ -158,7 +165,7 @@ public final class SqliteDatabaseService implements DatabaseService {
                 }
             } catch (SQLException e) {
                 throw new IllegalStateException("Database transaction failed.", e);
-            }
+            } finally { lifecycleLock.readLock().unlock(); }
         }, executor);
     }
 
@@ -166,6 +173,7 @@ public final class SqliteDatabaseService implements DatabaseService {
     public CompletableFuture<Path> backup(Path directory) {
         ensureOpen();
         return CompletableFuture.supplyAsync(() -> {
+            lifecycleLock.readLock().lock();
             try {
                 Files.createDirectories(directory);
                 String timestamp = LocalDateTime.now().format(BACKUP_FORMAT);
@@ -184,6 +192,44 @@ public final class SqliteDatabaseService implements DatabaseService {
                 return uniqueTarget;
             } catch (SQLException | IOException e) {
                 throw new IllegalStateException("Unable to create database backup.", e);
+            } finally { lifecycleLock.readLock().unlock(); }
+        }, executor);
+    }
+
+    @Override
+    public CompletableFuture<Void> restore(Path backupFile) {
+        ensureOpen();
+        return CompletableFuture.runAsync(() -> {
+            lifecycleLock.writeLock().lock();
+            try {
+                if (backupFile == null || !Files.isRegularFile(backupFile)) {
+                    throw new IllegalArgumentException("Backup file does not exist: " + backupFile);
+                }
+                Path source = backupFile.toAbsolutePath().normalize();
+                if (source.equals(file.toAbsolutePath().normalize())) {
+                    throw new IllegalArgumentException("Cannot restore the live database file onto itself.");
+                }
+                try (Connection verification = java.sql.DriverManager.getConnection("jdbc:sqlite:" + source)) {
+                    DatabaseMigrations.apply(verification);
+                    try (var statement = verification.createStatement(); var rs = statement.executeQuery("PRAGMA integrity_check")) {
+                        if (!rs.next() || !"ok".equalsIgnoreCase(rs.getString(1))) {
+                            throw new IllegalStateException("Backup integrity check failed.");
+                        }
+                    }
+                }
+                Path temp = file.resolveSibling(file.getFileName() + ".restore.tmp");
+                Files.copy(source, temp, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                try {
+                    Files.move(temp, file, java.nio.file.StandardCopyOption.REPLACE_EXISTING, java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+                } catch (java.nio.file.AtomicMoveNotSupportedException ignored) {
+                    Files.move(temp, file, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                }
+                Files.deleteIfExists(file.resolveSibling(file.getFileName() + "-wal"));
+                Files.deleteIfExists(file.resolveSibling(file.getFileName() + "-shm"));
+            } catch (SQLException | IOException e) {
+                throw new IllegalStateException("Unable to restore database backup.", e);
+            } finally {
+                lifecycleLock.writeLock().unlock();
             }
         }, executor);
     }
