@@ -13,3 +13,4 @@ database:
 worlds:
   enabled:
     - world
+  spawns: {}
