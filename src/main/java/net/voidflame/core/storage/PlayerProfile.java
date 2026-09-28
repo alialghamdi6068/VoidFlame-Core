@@ -9,6 +9,6 @@ public record PlayerProfile(
 ) {
     public static PlayerProfile defaults(UUID uuid, String name, long now) {
         return new PlayerProfile(uuid, name, now, now, 0, 0, 0, 0, 0, 1000.0,
-                "member", "{}", "{}");
+                "player", "{}", "{}");
     }
 }
