@@ -1,3 +1,8 @@
+# ================================================================
+# VoidFlame Core • Production Configuration
+# Paper 26.2 • Java 25
+# ================================================================
+# Single source of truth for storage, worlds, migrations and backups.
 settings:
   metrics: false
   debug: false
