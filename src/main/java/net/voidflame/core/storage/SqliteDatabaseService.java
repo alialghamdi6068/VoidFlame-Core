@@ -57,6 +57,12 @@ public final class SqliteDatabaseService implements DatabaseService {
     private void initialize() {
         try (Connection connection = openConnection()) {
             DatabaseMigrations.apply(connection);
+            try (var statement = connection.createStatement();
+                 var result = statement.executeQuery("PRAGMA integrity_check")) {
+                if (!result.next() || !"ok".equalsIgnoreCase(result.getString(1))) {
+                    throw new IllegalStateException("VoidFlame-Core database integrity check failed.");
+                }
+            }
         } catch (SQLException e) {
             throw new IllegalStateException("Unable to initialize VoidFlame database.", e);
         }
