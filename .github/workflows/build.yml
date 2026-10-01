@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -16,19 +16,33 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+
       - name: Set up Java 25
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '25'
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
         with:
           gradle-version: '9.1.0'
+
       - name: Build
-        run: gradle build --no-daemon
-      - name: Upload artifact
+        run: gradle clean build --no-daemon
+
+      - name: Upload JAR artifact
         uses: actions/upload-artifact@v5
         with:
           name: VoidFlame-Core
           path: build/libs/*.jar
+          if-no-files-found: error
+
+      - name: Publish direct JAR release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: VoidFlame-Core Build ${{ github.run_number }}
+          body: Automatic build from main. Download the JAR asset directly and place it in the server plugins folder.
+          files: build/libs/*.jar
+          prerelease: true
