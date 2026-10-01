@@ -32,6 +32,10 @@ public final class WorldCommands implements CommandExecutor, TabCompleter {
         }
 
         if (root.equals("world") || root.equals("spawn")) {
+            if (root.equals("spawn") && args.length > 0) {
+                sender.sendMessage(ChatColor.RED + "Usage: /spawn");
+                return true;
+            }
             return publicTeleport(sender, root, args);
         }
 
