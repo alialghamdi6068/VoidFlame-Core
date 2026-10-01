@@ -135,8 +135,7 @@ final class DatabaseMigrations {
                     CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs(timestamp DESC);
                     CREATE INDEX IF NOT EXISTS idx_audit_logs_actor ON audit_logs(actor);
                     CREATE INDEX IF NOT EXISTS idx_module_data_updated_at ON module_data(updated_at DESC);
-                    """)
-        );,
+                    """),
                 new Migration(4, """
                     UPDATE player_profiles SET rank='player' WHERE rank='member';
                     UPDATE module_data SET data_value='player'
