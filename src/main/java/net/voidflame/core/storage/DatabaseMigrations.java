@@ -141,6 +141,34 @@ final class DatabaseMigrations {
                     UPDATE module_data SET data_value='player'
                     WHERE module='ranks' AND data_key LIKE 'player.%' AND lower(data_value)='member';
                     """)
+,                new Migration(5, """
+                    CREATE TABLE IF NOT EXISTS shop_products (
+                        product_id TEXT PRIMARY KEY,
+                        display_name TEXT NOT NULL,
+                        material TEXT NOT NULL,
+                        price INTEGER NOT NULL CHECK(price >= 0),
+                        enabled INTEGER NOT NULL DEFAULT 1,
+                        metadata_json TEXT NOT NULL DEFAULT '{}'
+                    );
+                    CREATE TABLE IF NOT EXISTS player_shop_purchases (
+                        uuid TEXT NOT NULL,
+                        product_id TEXT NOT NULL,
+                        purchased_at INTEGER NOT NULL,
+                        PRIMARY KEY (uuid, product_id)
+                    );
+                    CREATE TABLE IF NOT EXISTS training_sessions (
+                        session_id TEXT PRIMARY KEY,
+                        uuid TEXT NOT NULL,
+                        drill TEXT NOT NULL,
+                        started_at INTEGER NOT NULL,
+                        finished_at INTEGER,
+                        score INTEGER NOT NULL DEFAULT 0
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_reports_target_status ON reports(target, status);
+                    CREATE INDEX IF NOT EXISTS idx_replays_timestamp ON replays(timestamp DESC);
+                    CREATE INDEX IF NOT EXISTS idx_ffa_stats_kills ON ffa_stats(kills DESC);
+                    CREATE INDEX IF NOT EXISTS idx_training_uuid_started ON training_sessions(uuid, started_at DESC);
+                    """)
         );
 
         for (Migration migration : migrations) {
