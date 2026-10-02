@@ -12,6 +12,8 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface ArenaService {
     Optional<ArenaHandle> acquireHandle();
+    /** Allocate an arena compatible with a specific kit. */
+    default Optional<ArenaHandle> acquireHandleForKit(String kitId) { return acquireHandle(); }
     CompletableFuture<Boolean> reset(String arenaName);
     long availableCount();
     List<String> allNames();
