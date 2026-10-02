@@ -220,7 +220,7 @@ final class DatabaseMigrations {
                         ON punishments(created_at DESC);
                     CREATE INDEX IF NOT EXISTS idx_punishments_expires
                         ON punishments(expires_at);
-                    """),
+                    """)
         );
 
         for (Migration migration : migrations) {
