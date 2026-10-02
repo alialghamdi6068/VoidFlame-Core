@@ -141,7 +141,37 @@ final class DatabaseMigrations {
                     UPDATE module_data SET data_value='player'
                     WHERE module='ranks' AND data_key LIKE 'player.%' AND lower(data_value)='member';
                     """)
-,                new Migration(5, """
+,                new Migration(6, """
+                    CREATE TABLE IF NOT EXISTS plugin_registry (
+                        plugin_id TEXT PRIMARY KEY,
+                        version TEXT NOT NULL,
+                        enabled INTEGER NOT NULL DEFAULT 1,
+                        registered_at INTEGER NOT NULL,
+                        updated_at INTEGER NOT NULL,
+                        metadata_json TEXT NOT NULL DEFAULT '{}'
+                    );
+                    CREATE TABLE IF NOT EXISTS auth_accounts (
+                        uuid TEXT PRIMARY KEY,
+                        password_hash TEXT NOT NULL,
+                        created_at INTEGER NOT NULL,
+                        updated_at INTEGER NOT NULL,
+                        failed_attempts INTEGER NOT NULL DEFAULT 0,
+                        locked_until INTEGER NOT NULL DEFAULT 0
+                    );
+                    CREATE TABLE IF NOT EXISTS security_events (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        uuid TEXT,
+                        ip_hash TEXT,
+                        event_type TEXT NOT NULL,
+                        risk_score INTEGER NOT NULL DEFAULT 0,
+                        created_at INTEGER NOT NULL,
+                        metadata_json TEXT NOT NULL DEFAULT '{}'
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_plugin_registry_updated ON plugin_registry(updated_at DESC);
+                    CREATE INDEX IF NOT EXISTS idx_security_events_created ON security_events(created_at DESC);
+                    CREATE INDEX IF NOT EXISTS idx_security_events_uuid ON security_events(uuid, created_at DESC);
+                    """),
+                new Migration(5, """
                     CREATE TABLE IF NOT EXISTS shop_products (
                         product_id TEXT PRIMARY KEY,
                         display_name TEXT NOT NULL,
