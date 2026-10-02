@@ -59,6 +59,21 @@ public final class WorldService {
             return existing;
         }
 
+        if (multiverseInstalled()) {
+            if (!Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "mv load " + name)) {
+                throw new IllegalStateException("Multiverse-Core failed to load world: " + name);
+            }
+
+            World loaded = get(name);
+            if (loaded == null) {
+                throw new IllegalStateException("Multiverse-Core reported success but world is not loaded: " + name);
+            }
+
+            enabled.add(loaded.getName());
+            persist();
+            return loaded;
+        }
+
         World world = new WorldCreator(name).createWorld();
         if (world == null) {
             throw new IllegalStateException("Failed to load world: " + name);
@@ -77,20 +92,24 @@ public final class WorldService {
             return false;
         }
 
-        World fallback = Bukkit.getWorlds().stream()
-                .filter(w -> !w.getName().equalsIgnoreCase(world.getName()))
-                .findFirst()
-                .orElse(null);
-
-        if (fallback == null) {
+        if (Bukkit.getWorlds().size() <= 1) {
             throw new IllegalStateException("The server must keep at least one loaded world.");
         }
 
-        for (Player player : List.copyOf(world.getPlayers())) {
-            player.teleportAsync(fallback.getSpawnLocation());
+        if (!world.getPlayers().isEmpty()) {
+            throw new IllegalStateException("World cannot be unloaded while players are inside it.");
         }
 
-        boolean result = Bukkit.unloadWorld(world, save);
+        boolean result;
+        if (multiverseInstalled()) {
+            result = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "mv unload " + name);
+            if (result && get(name) != null) {
+                throw new IllegalStateException("Multiverse-Core reported success but world is still loaded: " + name);
+            }
+        } else {
+            result = Bukkit.unloadWorld(world, save);
+        }
+
         if (result) {
             enabled.removeIf(w -> w.equalsIgnoreCase(name));
             persist();
@@ -103,9 +122,6 @@ public final class WorldService {
     }
 
     public void disable(String name) {
-        if (Bukkit.getWorlds().size() <= 1 && get(name) != null) {
-            throw new IllegalStateException("The server must keep at least one loaded world.");
-        }
         if (!unload(name, true)) {
             throw new IllegalArgumentException("World is not loaded: " + name);
         }
@@ -156,5 +172,9 @@ public final class WorldService {
     public void persist() {
         plugin.getConfig().set("worlds.enabled", new ArrayList<>(new TreeSet<>(enabled)));
         plugin.saveConfig();
+    }
+
+    private boolean multiverseInstalled() {
+        return Bukkit.getPluginManager().getPlugin("Multiverse-Core") != null;
     }
 }
