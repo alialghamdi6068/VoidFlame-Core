@@ -198,7 +198,29 @@ final class DatabaseMigrations {
                     CREATE INDEX IF NOT EXISTS idx_replays_timestamp ON replays(timestamp DESC);
                     CREATE INDEX IF NOT EXISTS idx_ffa_stats_kills ON ffa_stats(kills DESC);
                     CREATE INDEX IF NOT EXISTS idx_training_uuid_started ON training_sessions(uuid, started_at DESC);
-                    """)
+                    """),
+                new Migration(7, """
+                    UPDATE player_profiles SET rank='member' WHERE lower(rank)='player';
+                    UPDATE module_data SET data_value='member'
+                    WHERE module='ranks' AND data_key LIKE 'player.%' AND lower(data_value)='player';
+                    CREATE TABLE IF NOT EXISTS punishments (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        uuid TEXT NOT NULL,
+                        type TEXT NOT NULL,
+                        actor_uuid TEXT NOT NULL,
+                        actor_name TEXT NOT NULL,
+                        reason TEXT NOT NULL,
+                        created_at INTEGER NOT NULL,
+                        expires_at INTEGER,
+                        active INTEGER NOT NULL DEFAULT 1
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_punishments_target_active
+                        ON punishments(uuid, active, type);
+                    CREATE INDEX IF NOT EXISTS idx_punishments_created
+                        ON punishments(created_at DESC);
+                    CREATE INDEX IF NOT EXISTS idx_punishments_expires
+                        ON punishments(expires_at);
+                    """),
         );
 
         for (Migration migration : migrations) {
