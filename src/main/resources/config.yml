@@ -2,30 +2,70 @@
 # VoidFlame Core • Production Configuration
 # Paper 26.2 • Java 25
 # ================================================================
-# Single source of truth for storage, worlds, migrations and backups.
+# Core owns the shared VoidFlame persistence layer.
+# Every custom VoidFlame plugin writes into this ONE file:
+#   plugins/VoidFlame-Core/database.db
+#
+# Do not create per-plugin database folders/files.
+# Module data is namespaced inside the Core database, so moving the
+# server together with this plugin directory preserves custom data.
+#
+# Third-party plugins (Duels/Kits/Arenas/TAB) keep their own native data
+# unless their own plugin provides an integration/import mechanism.
+
 settings:
+  # Disable telemetry unless you explicitly choose to enable it.
   metrics: false
+  # Enable verbose Core diagnostics. Keep false in production.
   debug: false
+  # Default language for Core messages.
   locale: en_US
+  # Timestamp timezone used by Core services.
   timezone: UTC
+  # Keep frequently used profiles/settings in memory.
   cache-enabled: true
+  # Perform storage work asynchronously where supported.
   async-storage: true
+  # Flush queued writes before shutdown.
   flush-on-shutdown: true
+  # Validate configuration values during startup.
   validate-settings: true
 
 database:
+  # SQLite connection initialization timeout.
   connection-timeout-seconds: 15
+  # Time SQLite waits when another operation holds a lock.
   busy-timeout-milliseconds: 5000
+  # WAL improves concurrent read/write behavior for the shared database.
   wal: true
+  # Enforce relational foreign keys.
   foreign-keys: true
+  # Apply schema migrations automatically and transactionally.
   migrations: true
+  # Restores replace live data and require a full server restart.
   restore-requires-restart: true
+  # Automatic single-file backups of database.db.
   backups:
     enabled: true
+    # Minimum supported interval is 5 minutes.
     interval-minutes: 30
+    # Keep the newest N backups and remove older ones.
     keep: 10
+    # Backup directory is relative to this plugin's data folder.
+    directory: backups
+
+storage:
+  # Logical module namespaces used by custom plugins.
+  # Examples: ranks, security, logs, admin and future VoidFlame modules.
+  namespace-isolation: true
+  # Reject blank module/key identifiers to avoid malformed records.
+  validate-keys: true
+  # Maximum logical value size for module_data writes.
+  max-value-bytes: 1048576
 
 worlds:
+  # Worlds managed by Core's /vfworld system.
   enabled:
     - world
+  # Per-world spawn definitions are persisted by Core.
   spawns: {}
