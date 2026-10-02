@@ -8,6 +8,7 @@ public interface KitService {
     boolean apply(Player player, String kitId);
     boolean exists(String kitId);
     default List<String> listIds() { return List.of(); }
+    default boolean isEnabled(String kitId) { return exists(kitId); }
 
     /** Opens the owning Kits plugin's layout editor without moving GUI ownership into Core. */
     default boolean openEditor(Player player, String kitId, String layoutName) { return false; }
