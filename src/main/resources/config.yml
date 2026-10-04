@@ -54,6 +54,12 @@ database:
     # Backup directory is relative to this plugin's data folder.
     directory: backups
 
+plugins:
+  # Core indexes every installed plugin so migrations/host moves retain a central inventory.
+  registry-enabled: true
+  # Custom VoidFlame modules must use Core storage; third-party plugins retain their native data unless integrated.
+  centralize-custom-data: true
+
 storage:
   # Logical module namespaces used by custom plugins.
   # Examples: ranks, security, logs, admin and future VoidFlame modules.
