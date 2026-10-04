@@ -226,6 +226,15 @@ public final class SqliteDatabaseService implements DatabaseService {
                         }
                     }
                 }
+                // Always snapshot the live database before replacing it.
+                Path safetyDir = file.getParent().resolve("backups");
+                Files.createDirectories(safetyDir);
+                String safetyName = "database-pre-restore-" + System.currentTimeMillis() + ".db";
+                Path safety = safetyDir.resolve(safetyName);
+                String escapedSafety = safety.toAbsolutePath().toString().replace("'", "''");
+                try (Connection current = openConnection(); var snapshot = current.createStatement()) {
+                    snapshot.execute("VACUUM INTO '" + escapedSafety + "'");
+                }
                 Path temp = file.resolveSibling(file.getFileName() + ".restore.tmp");
                 Files.copy(source, temp, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
                 try {
