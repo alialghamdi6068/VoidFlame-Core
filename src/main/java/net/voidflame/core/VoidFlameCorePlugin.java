@@ -19,6 +19,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.ServicePriority;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.nio.file.Files;
@@ -92,9 +93,26 @@ public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
 
         getServer().getPluginManager().registerEvents(this, this);
         Bukkit.getScheduler().runTask(this, this::loadEnabledWorlds);
+        Bukkit.getScheduler().runTask(this, this::indexInstalledPlugins);
 
         scheduleBackups();
         coreLogger.info("VoidFlame-Core enabled. Database: " + database.databasePath());
+    }
+
+    private void indexInstalledPlugins() {
+        for (Plugin plugin : getServer().getPluginManager().getPlugins()) {
+            String key = plugin.getName().toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9._-]", "_");
+            var description = plugin.getDescription();
+            storage.put("plugins", "plugin:" + key + ":name", plugin.getName());
+            storage.put("plugins", "plugin:" + key + ":version", description.getVersion());
+            storage.put("plugins", "plugin:" + key + ":main", description.getMain());
+            storage.put("plugins", "plugin:" + key + ":enabled", Boolean.toString(plugin.isEnabled()));
+            storage.put("plugins", "plugin:" + key + ":data-folder", plugin.getDataFolder().getAbsolutePath());
+            storage.put("plugins", "plugin:" + key + ":depend", String.join(",", description.getDepend()));
+            storage.put("plugins", "plugin:" + key + ":softdepend", String.join(",", description.getSoftDepend()));
+        }
+        storage.put("plugins", "registry:last-scan", Long.toString(System.currentTimeMillis()));
+        coreLogger.info("Indexed " + getServer().getPluginManager().getPlugins().length + " installed plugins into Core storage.");
     }
 
     private void loadEnabledWorlds() {
