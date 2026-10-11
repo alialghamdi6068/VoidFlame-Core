@@ -1,10 +1,12 @@
 package net.voidflame.core;
 
 import net.voidflame.core.api.ServiceRegistry;
+import net.voidflame.core.api.EconomyService;
 import net.voidflame.core.config.CoreConfig;
 import net.voidflame.core.logging.CoreLogger;
 import net.voidflame.core.scheduler.CoreScheduler;
 import net.voidflame.core.storage.DatabaseService;
+import net.voidflame.core.storage.SqliteEconomyService;
 import net.voidflame.core.storage.SqliteDatabaseService;
 import net.voidflame.core.storage.StorageService;
 import net.voidflame.core.storage.SqliteStorageService;
@@ -37,6 +39,7 @@ public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
     private PlayerProfileService playerProfiles;
     private PlayerSettingsService playerSettings;
     private ServerSettingsService serverSettings;
+    private EconomyService economy;
     private WorldService worlds;
 
     @Override
@@ -57,6 +60,7 @@ public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
             playerProfiles = new PlayerProfileService(database);
             playerSettings = new PlayerSettingsService(storage);
             serverSettings = new ServerSettingsService(storage);
+            economy = new SqliteEconomyService(database);
         } catch (RuntimeException ex) {
             coreLogger.error("Failed to initialize the VoidFlame database.", ex);
             getServer().getPluginManager().disablePlugin(this);
@@ -76,6 +80,7 @@ public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
         services.register(PlayerProfileService.class, playerProfiles);
         services.register(PlayerSettingsService.class, playerSettings);
         services.register(ServerSettingsService.class, serverSettings);
+        services.register(EconomyService.class, economy);
 
         getServer().getServicesManager().register(ServiceRegistry.class, services, this, ServicePriority.Highest);
         getServer().getServicesManager().register(DatabaseService.class, database, this, ServicePriority.Highest);
@@ -83,6 +88,7 @@ public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
         getServer().getServicesManager().register(PlayerProfileService.class, playerProfiles, this, ServicePriority.Highest);
         getServer().getServicesManager().register(PlayerSettingsService.class, playerSettings, this, ServicePriority.Highest);
         getServer().getServicesManager().register(ServerSettingsService.class, serverSettings, this, ServicePriority.Highest);
+        getServer().getServicesManager().register(EconomyService.class, economy, this, ServicePriority.Highest);
 
         WorldCommands worldCommands = new WorldCommands(worlds);
         getCommand("spawn").setExecutor(worldCommands);
@@ -176,6 +182,7 @@ public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
         getServer().getServicesManager().unregister(PlayerProfileService.class, this);
         getServer().getServicesManager().unregister(PlayerSettingsService.class, this);
         getServer().getServicesManager().unregister(ServerSettingsService.class, this);
+        getServer().getServicesManager().unregister(EconomyService.class, this);
         getServer().getServicesManager().unregister(ServiceRegistry.class, this);
         if (services != null) services.clear();
         if (scheduler != null) scheduler.cancelAll();
@@ -192,5 +199,6 @@ public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
     public PlayerProfileService playerProfiles() { return playerProfiles; }
     public PlayerSettingsService playerSettings() { return playerSettings; }
     public ServerSettingsService serverSettings() { return serverSettings; }
+    public EconomyService economy() { return economy; }
     public WorldService worlds() { return worlds; }
 }
