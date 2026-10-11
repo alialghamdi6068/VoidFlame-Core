@@ -32,6 +32,19 @@ class SqliteEconomyServiceTest {
     }
 
     @Test
+    void idempotentDepositCannotCreditTwice() {
+        try (SqliteDatabaseService database = new SqliteDatabaseService(tempDir)) {
+            SqliteEconomyService economy = new SqliteEconomyService(database);
+            UUID player = UUID.randomUUID();
+            assertEquals(50L, economy.depositOnce(player, 50, "refund", "refund:test-order").join());
+            assertEquals(50L, economy.depositOnce(player, 50, "refund", "refund:test-order").join());
+            assertEquals(50L, economy.balance(player).join());
+            var ledger = database.query("SELECT COUNT(*) AS count FROM economy_transactions WHERE transaction_id='refund:test-order'").join();
+            assertEquals(1L, ((Number) ledger.getFirst().get("count")).longValue());
+        }
+    }
+
+    @Test
     void rejectsNonPositiveAmounts() {
         try (SqliteDatabaseService database = new SqliteDatabaseService(tempDir)) {
             SqliteEconomyService economy = new SqliteEconomyService(database);
