@@ -37,17 +37,17 @@ No feature plugin may create its own SQLite database. Core owns schema migration
 ## Modern DonutSMP-inspired behavior
 
 - Use native Paper/Minecraft Dialogs for primary navigation and settings on supported clients; do not recreate the primary dashboard as an old chest menu.
-- Keep /shop, even though DonutSMP removed its former fixed shop. In VoidFlameMC it is a Quick Buy view over active player listings.
+- Keep /shop, even though DonutSMP removed its former fixed shop. In VoidFlameMC it is a paginated Quick Buy Dialog over active player listings, matches full item metadata/enchantments, shows per-item prices, and refuses a purchase when the cheapest exact match exceeds 3x the displayed unit price. /shardshop is a separate premium catalog.
 - /sell compares server sell value with compatible open buyer orders and fills a higher-paying order first.
 - Auction listings can fill compatible higher-paying open orders.
 - Creating a funded order reserves the buyer's money and automatically purchases matching auction listings at or below the order's unit price.
 - Remaining order funds must be refunded when an order fills or is cancelled; expired orders must refund unused escrow.
 - Orders create claimable item deliveries. Never silently delete a buyer's purchased items.
-- Modern Friends & Following replaces a Teams-centered social design.
+- Modern Friends & Following replaces a Teams-centered social design; /friends and /following use Dialogs.
 - Scoreboard information is intentionally minimal: balance, shards, kills, deaths and playtime. `/baltop` is a native Dialog leaderboard.
 - `/sellhistory` shows the player's recent sell transactions. `/order <search>` searches open funded orders.
 - Staff use a colored star in the tab list instead of a large rank-name prefix.
-- Random teleport should be immediate on command execution with a configurable 15-second cooldown; player homes and TPA requests are handled by Social.
+- Random teleport should be immediate on command execution with a configurable 15-second cooldown; player homes and TPA requests are handled by Social. The dashboard includes Spawn, Profile, Quick Buy, Shard Shop, AH, Orders, Friends, Homes, RTP, Stats, Settings and Balance Leaderboard.
 - Shards are a separate balance from coins. The current design awards one shard per 10 minutes online and supports the configurable Shard Shop catalog, timed Shard Tools, a 24-hour Haste effect, and one-day item self-destruction for timed tools.
 - Native death drops and player-raiding mechanics remain enabled; Security may prevent exploits but must not disable ordinary survival behavior.
 
