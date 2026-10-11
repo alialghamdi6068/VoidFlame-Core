@@ -176,7 +176,12 @@ public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
 
     private void applySmpRules(World world) {
         String persistentWorld = getConfig().getString("smp.persistent-world", "world");
-        if (persistentWorld == null || !world.getName().equalsIgnoreCase(persistentWorld)) return;
+        if (persistentWorld == null) return;
+        String name = world.getName();
+        boolean survivalDimension = name.equalsIgnoreCase(persistentWorld)
+            || name.equalsIgnoreCase(persistentWorld + "_nether")
+            || name.equalsIgnoreCase(persistentWorld + "_the_end");
+        if (!survivalDimension) return;
         world.setGameRule(GameRule.KEEP_INVENTORY, false);
         world.setGameRule(GameRule.DO_MOB_LOOT, true);
     }
