@@ -1,18 +1,20 @@
 name: VoidFlame-Core
-version: 1.0.0
+version: 2.0.0
 main: net.voidflame.core.VoidFlameCorePlugin
-description: Shared foundation and API for the VoidFlame practice server.
+description: Shared persistence, storage API and infrastructure for VoidFlameMC SMP.
 author: VoidFlame
 website: https://github.com/alialghamdi6068/VoidFlame-Core
 api-version: '26.2'
 load: STARTUP
 prefix: VoidFlame-Core
 softdepend:
+  - LuckPerms
+  - PlaceholderAPI
   - Multiverse-Core
 
 commands:
   spawn:
-    description: Return to the VoidFlame spawn.
+    description: Return to the VoidFlameMC spawn.
     usage: /spawn
     permission: voidflame.spawn
   vfrestore:
@@ -20,17 +22,17 @@ commands:
     usage: /vfrestore <backup-file>
     permission: voidflame.database.restore
   vfworld:
-    description: Administrative VoidFlame world manager.
+    description: Administrative world manager.
     usage: /vfworld <help|list|info|enable|disable|load|unload|tp|setspawn|reload> [world]
     permission: voidflame.world.manage
 
 permissions:
   voidflame.spawn:
-    description: Return to the main practice spawn.
+    description: Return to the main SMP spawn.
     default: true
   voidflame.database.restore:
     description: Restore a validated Core database backup.
     default: op
   voidflame.world.manage:
-    description: Manage practice worlds.
+    description: Manage server worlds.
     default: op
