@@ -44,9 +44,11 @@ No feature plugin may create its own SQLite database. Core owns schema migration
 - Remaining order funds must be refunded when an order fills or is cancelled; expired orders must refund unused escrow.
 - Orders create claimable item deliveries. Never silently delete a buyer's purchased items.
 - Modern Friends & Following replaces a Teams-centered social design.
-- Scoreboard information is intentionally minimal: balance, shards, kills, deaths and playtime.
+- Scoreboard information is intentionally minimal: balance, shards, kills, deaths and playtime. `/baltop` is a native Dialog leaderboard.
+- `/sellhistory` shows the player's recent sell transactions. `/order <search>` searches open funded orders.
 - Staff use a colored star in the tab list instead of a large rank-name prefix.
-- Random teleport should be immediate on command execution with a configurable 15-second cooldown.
+- Random teleport should be immediate on command execution with a configurable 15-second cooldown; player homes and TPA requests are handled by Social.
+- Shards are a separate balance from coins. The current design awards one shard per 10 minutes online and supports the configurable Shard Shop catalog, timed Shard Tools, a 24-hour Haste effect, and one-day item self-destruction for timed tools.
 - Native death drops and player-raiding mechanics remain enabled; Security may prevent exploits but must not disable ordinary survival behavior.
 
 ## Security and reliability requirements
