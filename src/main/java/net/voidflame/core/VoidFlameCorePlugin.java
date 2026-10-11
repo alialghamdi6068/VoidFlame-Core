@@ -16,6 +16,9 @@ import net.voidflame.core.storage.ServerSettingsService;
 import net.voidflame.core.world.WorldCommands;
 import net.voidflame.core.world.WorldService;
 import org.bukkit.Bukkit;
+import org.bukkit.GameRule;
+import org.bukkit.World;
+import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -124,7 +127,8 @@ public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
     private void loadEnabledWorlds() {
         for (String name : worlds.enabledWorlds()) {
             try {
-                worlds.load(name);
+                World loaded = worlds.load(name);
+                applySmpRules(loaded);
                 coreLogger.info("World enabled: " + name);
             } catch (Exception ex) {
                 coreLogger.error("Failed to enable world: " + name, ex);
@@ -163,6 +167,18 @@ public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
         } catch (Exception ex) {
             coreLogger.error("Unable to prune database backups.", ex);
         }
+    }
+
+    @EventHandler
+    public void onWorldLoad(WorldLoadEvent event) {
+        applySmpRules(event.getWorld());
+    }
+
+    private void applySmpRules(World world) {
+        String persistentWorld = getConfig().getString("smp.persistent-world", "world");
+        if (persistentWorld == null || !world.getName().equalsIgnoreCase(persistentWorld)) return;
+        world.setGameRule(GameRule.KEEP_INVENTORY, false);
+        world.setGameRule(GameRule.DO_MOB_LOOT, true);
     }
 
     @EventHandler
