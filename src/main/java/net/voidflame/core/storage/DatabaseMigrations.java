@@ -306,6 +306,31 @@ final class DatabaseMigrations {
                         PRIMARY KEY(uuid, home_name)
                     );
                     """)
+,
+                new Migration(9, """
+                    CREATE TABLE IF NOT EXISTS order_deliveries (
+                        delivery_id TEXT PRIMARY KEY,
+                        order_id TEXT NOT NULL,
+                        buyer_uuid TEXT NOT NULL,
+                        material TEXT NOT NULL,
+                        item_data BLOB NOT NULL,
+                        amount INTEGER NOT NULL CHECK(amount > 0),
+                        claimed INTEGER NOT NULL DEFAULT 0,
+                        created_at INTEGER NOT NULL
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_order_deliveries_buyer ON order_deliveries(buyer_uuid, claimed, created_at DESC);
+                    CREATE TABLE IF NOT EXISTS player_profiles_smp (
+                        uuid TEXT PRIMARY KEY,
+                        last_known_name TEXT NOT NULL,
+                        first_join INTEGER NOT NULL,
+                        last_join INTEGER NOT NULL,
+                        kills INTEGER NOT NULL DEFAULT 0,
+                        deaths INTEGER NOT NULL DEFAULT 0,
+                        playtime_seconds INTEGER NOT NULL DEFAULT 0
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_player_profiles_smp_kills ON player_profiles_smp(kills DESC);
+                    CREATE INDEX IF NOT EXISTS idx_player_profiles_smp_playtime ON player_profiles_smp(playtime_seconds DESC);
+                    """)
 
         );
 
