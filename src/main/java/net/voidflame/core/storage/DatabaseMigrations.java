@@ -220,7 +220,93 @@ final class DatabaseMigrations {
                         ON punishments(created_at DESC);
                     CREATE INDEX IF NOT EXISTS idx_punishments_expires
                         ON punishments(expires_at);
+                    """),
+                new Migration(8, """
+                    CREATE TABLE IF NOT EXISTS economy_accounts (
+                        uuid TEXT PRIMARY KEY,
+                        balance INTEGER NOT NULL DEFAULT 0 CHECK(balance >= 0),
+                        shards INTEGER NOT NULL DEFAULT 0 CHECK(shards >= 0),
+                        created_at INTEGER NOT NULL,
+                        updated_at INTEGER NOT NULL
+                    );
+                    CREATE TABLE IF NOT EXISTS economy_transactions (
+                        transaction_id TEXT PRIMARY KEY,
+                        actor_uuid TEXT,
+                        target_uuid TEXT,
+                        transaction_type TEXT NOT NULL,
+                        amount INTEGER NOT NULL CHECK(amount >= 0),
+                        balance_after INTEGER,
+                        details TEXT NOT NULL DEFAULT '',
+                        created_at INTEGER NOT NULL
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_economy_transactions_actor ON economy_transactions(actor_uuid, created_at DESC);
+                    CREATE INDEX IF NOT EXISTS idx_economy_transactions_target ON economy_transactions(target_uuid, created_at DESC);
+                    CREATE TABLE IF NOT EXISTS sell_prices (
+                        material TEXT PRIMARY KEY,
+                        unit_price INTEGER NOT NULL CHECK(unit_price >= 0),
+                        enabled INTEGER NOT NULL DEFAULT 1
+                    );
+                    CREATE TABLE IF NOT EXISTS market_listings (
+                        listing_id TEXT PRIMARY KEY,
+                        seller_uuid TEXT NOT NULL,
+                        seller_name TEXT NOT NULL,
+                        material TEXT NOT NULL,
+                        item_data BLOB NOT NULL,
+                        amount INTEGER NOT NULL CHECK(amount > 0),
+                        unit_price INTEGER NOT NULL CHECK(unit_price >= 0),
+                        status TEXT NOT NULL DEFAULT 'ACTIVE',
+                        created_at INTEGER NOT NULL,
+                        expires_at INTEGER NOT NULL
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_market_listings_active ON market_listings(status, material, unit_price);
+                    CREATE INDEX IF NOT EXISTS idx_market_listings_seller ON market_listings(seller_uuid, status);
+                    CREATE TABLE IF NOT EXISTS buy_orders (
+                        order_id TEXT PRIMARY KEY,
+                        buyer_uuid TEXT NOT NULL,
+                        buyer_name TEXT NOT NULL,
+                        material TEXT NOT NULL,
+                        amount_total INTEGER NOT NULL CHECK(amount_total > 0),
+                        amount_remaining INTEGER NOT NULL CHECK(amount_remaining >= 0),
+                        unit_price INTEGER NOT NULL CHECK(unit_price >= 0),
+                        escrow_amount INTEGER NOT NULL CHECK(escrow_amount >= 0),
+                        status TEXT NOT NULL DEFAULT 'OPEN',
+                        created_at INTEGER NOT NULL,
+                        expires_at INTEGER NOT NULL
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_buy_orders_match ON buy_orders(status, material, unit_price DESC, created_at ASC);
+                    CREATE INDEX IF NOT EXISTS idx_buy_orders_buyer ON buy_orders(buyer_uuid, status);
+                    CREATE TABLE IF NOT EXISTS social_relationships (
+                        owner_uuid TEXT NOT NULL,
+                        target_uuid TEXT NOT NULL,
+                        relationship_type TEXT NOT NULL,
+                        status TEXT NOT NULL DEFAULT 'PENDING',
+                        created_at INTEGER NOT NULL,
+                        updated_at INTEGER NOT NULL,
+                        PRIMARY KEY(owner_uuid, target_uuid, relationship_type),
+                        CHECK(owner_uuid <> target_uuid)
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_social_target ON social_relationships(target_uuid, relationship_type, status);
+                    CREATE TABLE IF NOT EXISTS player_preferences (
+                        uuid TEXT NOT NULL,
+                        preference_key TEXT NOT NULL,
+                        preference_value TEXT NOT NULL,
+                        updated_at INTEGER NOT NULL,
+                        PRIMARY KEY(uuid, preference_key)
+                    );
+                    CREATE TABLE IF NOT EXISTS player_homes (
+                        uuid TEXT NOT NULL,
+                        home_name TEXT NOT NULL,
+                        world_name TEXT NOT NULL,
+                        x REAL NOT NULL,
+                        y REAL NOT NULL,
+                        z REAL NOT NULL,
+                        yaw REAL NOT NULL DEFAULT 0,
+                        pitch REAL NOT NULL DEFAULT 0,
+                        created_at INTEGER NOT NULL,
+                        PRIMARY KEY(uuid, home_name)
+                    );
                     """)
+
         );
 
         for (Migration migration : migrations) {
