@@ -331,6 +331,20 @@ final class DatabaseMigrations {
                     CREATE INDEX IF NOT EXISTS idx_player_profiles_smp_kills ON player_profiles_smp(kills DESC);
                     CREATE INDEX IF NOT EXISTS idx_player_profiles_smp_playtime ON player_profiles_smp(playtime_seconds DESC);
                     """)
+,
+                new Migration(10, """
+                    CREATE TABLE IF NOT EXISTS shard_shop_products (
+                        product_id TEXT PRIMARY KEY,
+                        display_name TEXT NOT NULL,
+                        material TEXT NOT NULL,
+                        price_shards INTEGER NOT NULL CHECK(price_shards >= 0),
+                        enchantments_json TEXT NOT NULL DEFAULT '{}',
+                        ability TEXT NOT NULL DEFAULT '',
+                        lifetime_seconds INTEGER NOT NULL DEFAULT 0,
+                        enabled INTEGER NOT NULL DEFAULT 1
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_shard_shop_enabled ON shard_shop_products(enabled, price_shards);
+                    """)
 
         );
 
