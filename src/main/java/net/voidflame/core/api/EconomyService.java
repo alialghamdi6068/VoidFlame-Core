@@ -13,6 +13,7 @@ public interface EconomyService {
     CompletableFuture<Long> depositShards(UUID playerId, long amount, String reason);
     CompletableFuture<Boolean> withdrawShards(UUID playerId, long amount, String reason);
     CompletableFuture<Long> deposit(UUID playerId, long amount, String reason);
+    CompletableFuture<Long> depositOnce(UUID playerId, long amount, String reason, String idempotencyKey);
     CompletableFuture<Boolean> withdraw(UUID playerId, long amount, String reason);
     CompletableFuture<Boolean> transfer(UUID senderId, UUID targetId, long amount);
 }
