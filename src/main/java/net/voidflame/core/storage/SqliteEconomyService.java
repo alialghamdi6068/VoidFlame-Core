@@ -35,6 +35,63 @@ public final class SqliteEconomyService implements EconomyService {
     }
 
     @Override
+    public CompletableFuture<Long> shardBalance(UUID playerId) {
+        if (playerId == null) return CompletableFuture.failedFuture(new IllegalArgumentException("Player UUID is required."));
+        return CompletableFuture.supplyAsync(() -> {
+            mutationLock.lock();
+            try { ensureAccount(playerId); return readShardBalance(playerId); }
+            finally { mutationLock.unlock(); }
+        });
+    }
+
+    @Override
+    public CompletableFuture<Long> depositShards(UUID playerId, long amount, String reason) {
+        validateAmount(playerId, amount);
+        return CompletableFuture.supplyAsync(() -> {
+            mutationLock.lock();
+            try {
+                ensureAccount(playerId);
+                long before = readShardBalance(playerId);
+                long after = Math.addExact(before, amount);
+                long now = System.currentTimeMillis();
+                database.transaction(List.of(
+                    new DatabaseService.Statement("UPDATE economy_accounts SET shards=?, updated_at=? WHERE uuid=?", after, now, playerId.toString()),
+                    new DatabaseService.Statement("INSERT INTO economy_transactions(transaction_id,actor_uuid,target_uuid,transaction_type,amount,balance_after,details,created_at) VALUES (?,?,?,'SHARD_DEPOSIT',?,?,?,?)",
+                        UUID.randomUUID().toString(), playerId.toString(), playerId.toString(), amount, after, safeReason(reason), now)
+                )).join();
+                return after;
+            } finally { mutationLock.unlock(); }
+        });
+    }
+
+    @Override
+    public CompletableFuture<Boolean> withdrawShards(UUID playerId, long amount, String reason) {
+        validateAmount(playerId, amount);
+        return CompletableFuture.supplyAsync(() -> {
+            mutationLock.lock();
+            try {
+                ensureAccount(playerId);
+                long before = readShardBalance(playerId);
+                if (before < amount) return false;
+                long after = before - amount;
+                long now = System.currentTimeMillis();
+                database.transaction(List.of(
+                    new DatabaseService.Statement("UPDATE economy_accounts SET shards=?, updated_at=? WHERE uuid=? AND shards>=?", after, now, playerId.toString(), amount),
+                    new DatabaseService.Statement("INSERT INTO economy_transactions(transaction_id,actor_uuid,target_uuid,transaction_type,amount,balance_after,details,created_at) VALUES (?,?,?,'SHARD_WITHDRAW',?,?,?,?)",
+                        UUID.randomUUID().toString(), playerId.toString(), playerId.toString(), amount, after, safeReason(reason), now)
+                )).join();
+                return true;
+            } finally { mutationLock.unlock(); }
+        });
+    }
+
+    private long readShardBalance(UUID playerId) {
+        List<Map<String, Object>> rows = database.query("SELECT shards FROM economy_accounts WHERE uuid=?", playerId.toString()).join();
+        if (rows.isEmpty()) throw new IllegalStateException("Economy account was not created.");
+        return ((Number) rows.getFirst().get("shards")).longValue();
+    }
+
+    @Override
     public CompletableFuture<Long> deposit(UUID playerId, long amount, String reason) {
         validateAmount(playerId, amount);
         return CompletableFuture.supplyAsync(() -> {
