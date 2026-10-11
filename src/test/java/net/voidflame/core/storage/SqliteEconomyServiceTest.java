@@ -45,6 +45,20 @@ class SqliteEconomyServiceTest {
     }
 
     @Test
+    void shardBalanceIsSeparateFromCoins() {
+        try (SqliteDatabaseService database = new SqliteDatabaseService(tempDir)) {
+            SqliteEconomyService economy = new SqliteEconomyService(database);
+            UUID player = UUID.randomUUID();
+            economy.deposit(player, 100, "coins").join();
+            assertEquals(0L, economy.shardBalance(player).join());
+            assertEquals(7L, economy.depositShards(player, 7, "shard-test").join());
+            assertTrue(economy.withdrawShards(player, 2, "shard-test").join());
+            assertEquals(5L, economy.shardBalance(player).join());
+            assertEquals(100L, economy.balance(player).join());
+        }
+    }
+
+    @Test
     void rejectsNonPositiveAmounts() {
         try (SqliteDatabaseService database = new SqliteDatabaseService(tempDir)) {
             SqliteEconomyService economy = new SqliteEconomyService(database);
