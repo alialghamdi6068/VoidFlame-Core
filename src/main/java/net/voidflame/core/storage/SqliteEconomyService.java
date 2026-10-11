@@ -119,6 +119,56 @@ public final class SqliteEconomyService implements EconomyService {
     }
 
     @Override
+    public CompletableFuture<Long> depositOnce(UUID playerId, long amount, String reason, String idempotencyKey) {
+        validateAmount(playerId, amount);
+        if (idempotencyKey == null || idempotencyKey.isBlank() || idempotencyKey.length() > 200)
+            return CompletableFuture.failedFuture(new IllegalArgumentException("A stable idempotency key is required."));
+        return CompletableFuture.supplyAsync(() -> {
+            mutationLock.lock();
+            try {
+                ensureAccount(playerId);
+                List<Map<String, Object>> existing = database.query(
+                    "SELECT target_uuid, amount, transaction_type FROM economy_transactions WHERE transaction_id=?",
+                    idempotencyKey
+                ).join();
+                if (!existing.isEmpty()) {
+                    Map<String, Object> row = existing.getFirst();
+                    if (!playerId.toString().equals(String.valueOf(row.get("target_uuid")))
+                            || ((Number) row.get("amount")).longValue() != amount
+                            || !"DEPOSIT".equals(String.valueOf(row.get("transaction_type")))) {
+                        throw new IllegalStateException("Idempotency key was already used for a different transaction.");
+                    }
+                    return readBalance(playerId);
+                }
+                long before = readBalance(playerId);
+                long after = Math.addExact(before, amount);
+                long now = System.currentTimeMillis();
+                try {
+                    database.transaction(List.of(
+                        new DatabaseService.Statement("UPDATE economy_accounts SET balance=?, updated_at=? WHERE uuid=?", after, now, playerId.toString()),
+                        new DatabaseService.Statement("INSERT INTO economy_transactions(transaction_id,actor_uuid,target_uuid,transaction_type,amount,balance_after,details,created_at) VALUES (?,?,?,'DEPOSIT',?,?,?,?)",
+                            idempotencyKey, playerId.toString(), playerId.toString(), amount, after, safeReason(reason), now)
+                    )).join();
+                    return after;
+                } catch (RuntimeException failure) {
+                    List<Map<String, Object>> retry = database.query(
+                        "SELECT target_uuid, amount, transaction_type FROM economy_transactions WHERE transaction_id=?", idempotencyKey
+                    ).join();
+                    if (!retry.isEmpty()
+                            && playerId.toString().equals(String.valueOf(retry.getFirst().get("target_uuid")))
+                            && ((Number) retry.getFirst().get("amount")).longValue() == amount
+                            && "DEPOSIT".equals(String.valueOf(retry.getFirst().get("transaction_type")))) {
+                        return readBalance(playerId);
+                    }
+                    throw failure;
+                }
+            } finally {
+                mutationLock.unlock();
+            }
+        });
+    }
+
+    @Override
     public CompletableFuture<Boolean> withdraw(UUID playerId, long amount, String reason) {
         validateAmount(playerId, amount);
         return CompletableFuture.supplyAsync(() -> {
