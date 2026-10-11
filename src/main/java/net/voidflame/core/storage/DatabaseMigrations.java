@@ -345,6 +345,19 @@ final class DatabaseMigrations {
                     );
                     CREATE INDEX IF NOT EXISTS idx_shard_shop_enabled ON shard_shop_products(enabled, price_shards);
                     """)
+,
+                new Migration(11, """
+                    CREATE TABLE IF NOT EXISTS sell_transactions (
+                        sale_id TEXT PRIMARY KEY,
+                        seller_uuid TEXT NOT NULL,
+                        material TEXT NOT NULL,
+                        amount INTEGER NOT NULL CHECK(amount > 0),
+                        total_paid INTEGER NOT NULL CHECK(total_paid >= 0),
+                        route TEXT NOT NULL,
+                        created_at INTEGER NOT NULL
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_sell_transactions_seller ON sell_transactions(seller_uuid, created_at DESC);
+                    """)
 
         );
 
