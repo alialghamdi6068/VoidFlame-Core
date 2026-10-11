@@ -358,6 +358,13 @@ final class DatabaseMigrations {
                     );
                     CREATE INDEX IF NOT EXISTS idx_sell_transactions_seller ON sell_transactions(seller_uuid, created_at DESC);
                     """)
+,
+                new Migration(12, """
+                    ALTER TABLE order_deliveries ADD COLUMN seller_uuid TEXT;
+                    ALTER TABLE order_deliveries ADD COLUMN sale_amount INTEGER NOT NULL DEFAULT 0;
+                    ALTER TABLE order_deliveries ADD COLUMN settled INTEGER NOT NULL DEFAULT 1;
+                    CREATE INDEX IF NOT EXISTS idx_order_deliveries_settlement ON order_deliveries(settled, created_at);
+                    """)
 
         );
 
