@@ -1,4 +1,4 @@
-name: Build VoidFlame-Core
+name: Build VoidFlame-Core SMP verification
 
 on:
   push:
