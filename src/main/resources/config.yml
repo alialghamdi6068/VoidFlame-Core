@@ -1,4 +1,4 @@
-# VoidFlame-Core | VoidFlameMC SMP
+# VoidFlame-Core | VoidFlameMC Practice & Duels
 # Paper 26.2 / Java 25
 # All custom VoidFlame plugins share plugins/VoidFlame-Core/database.db.
 # Never create a separate database in a feature plugin.
@@ -35,15 +35,10 @@ storage:
   validate-keys: true
   max-value-bytes: 1048576
 
-smp:
-  persistent-world: world
-  preserve-player-data: true
-  full-loot-on-death: true
-  allow-player-raiding: true
-  custom-ranks-plugin: false
-  permissions-provider: LuckPerms
+spawn:
+  world: duelpvp
 
 worlds:
   enabled:
-    - world
+    - duelpvp
   spawns: {}
