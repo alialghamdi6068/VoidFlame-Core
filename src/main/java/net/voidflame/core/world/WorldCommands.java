@@ -14,8 +14,8 @@ import java.util.List;
 import java.util.Locale;
 
 public final class WorldCommands implements CommandExecutor, TabCompleter {
-    private static final String ADMIN_PERMISSION = "voidflame.core.worlds.admin";
-    private static final String USE_PERMISSION = "voidflame.core.worlds.use";
+    private static final String ADMIN_PERMISSION = "voidflame.world.manage";
+    private static final String SPAWN_PERMISSION = "voidflame.spawn";
 
     private final WorldService worlds;
 
@@ -26,68 +26,33 @@ public final class WorldCommands implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         String root = command.getName().toLowerCase(Locale.ROOT);
-
-        if (root.equals("worlds")) {
-            return listPublic(sender);
-        }
-
-        if (root.equals("world") || root.equals("spawn")) {
-            if (root.equals("spawn") && args.length > 0) {
+        if (root.equals("spawn")) {
+            if (args.length != 0) {
                 sender.sendMessage(ChatColor.RED + "Usage: /spawn");
                 return true;
             }
-            return publicTeleport(sender, root, args);
+            return spawn(sender);
         }
-
         return admin(sender, args);
     }
 
-    private boolean listPublic(CommandSender sender) {
-        if (!sender.hasPermission(USE_PERMISSION)) {
-            sender.sendMessage(ChatColor.RED + "You do not have permission to view worlds.");
-            return true;
-        }
-
-        sender.sendMessage(ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + "VoidFlame Worlds");
-        List<World> loaded = worlds.loadedWorlds();
-        if (loaded.isEmpty()) {
-            sender.sendMessage(ChatColor.GRAY + "No worlds are currently available.");
-            return true;
-        }
-
-        for (World world : loaded) {
-            sender.sendMessage(ChatColor.DARK_GRAY + "• " + ChatColor.LIGHT_PURPLE + world.getName()
-                    + ChatColor.GRAY + " • " + world.getEnvironment().name());
-        }
-        return true;
-    }
-
-    private boolean publicTeleport(CommandSender sender, String root, String[] args) {
+    private boolean spawn(CommandSender sender) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage(ChatColor.RED + "This command can only be used by a player.");
             return true;
         }
-        if (!player.hasPermission(USE_PERMISSION)) {
-            player.sendMessage(ChatColor.RED + "You do not have permission to teleport between worlds.");
+        if (!player.hasPermission(SPAWN_PERMISSION)) {
+            player.sendMessage(ChatColor.RED + "You do not have permission to use /spawn.");
             return true;
         }
-
-        String target = args.length == 0 ? player.getWorld().getName() : args[0];
-        if (root.equals("spawn") && args.length == 0) {
-            worlds.teleportToSpawn(player, player.getWorld().getName());
-            player.sendMessage(ChatColor.GREEN + "Teleported to the world spawn.");
-            return true;
-        }
-
-        World world = worlds.get(target);
-        if (world == null || !worlds.isEnabled(world.getName())) {
-            player.sendMessage(ChatColor.RED + "That world is not available.");
-            return true;
-        }
-
-        worlds.teleportToSpawn(player, world.getName());
-        player.sendMessage(ChatColor.GREEN + "Teleported to " + ChatColor.WHITE + world.getName()
-                + ChatColor.GREEN + ".");
+        List<String> enabled = new ArrayList<>(worlds.enabledWorlds());
+        World target = null;
+        String configured = worlds.mainSpawnWorld();
+        if (configured != null) target = worlds.get(configured);
+        if (target == null && !enabled.isEmpty()) target = worlds.get(enabled.get(0));
+        if (target == null) target = player.getWorld();
+        worlds.teleportToSpawn(player, target.getName());
+        player.sendMessage(ChatColor.GREEN + "Teleported to the main spawn.");
         return true;
     }
 
@@ -132,7 +97,6 @@ public final class WorldCommands implements CommandExecutor, TabCompleter {
         require(args, 2, "World name is required.");
         World world = worlds.get(args[1]);
         if (world == null) throw new IllegalArgumentException("World is not loaded: " + args[1]);
-
         sender.sendMessage(ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + "World: " + world.getName());
         sender.sendMessage(ChatColor.GRAY + "Environment: " + ChatColor.WHITE + world.getEnvironment());
         sender.sendMessage(ChatColor.GRAY + "Players: " + ChatColor.WHITE + world.getPlayers().size());
@@ -198,20 +162,12 @@ public final class WorldCommands implements CommandExecutor, TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        String root = command.getName().toLowerCase(Locale.ROOT);
-
-        if (root.equals("worlds")) return List.of();
-
-        if (root.equals("world") || root.equals("spawn")) {
-            if (args.length == 1) return worldNames(args[0]);
-            return List.of();
-        }
-
+        if (command.getName().equalsIgnoreCase("spawn")) return List.of();
+        if (!sender.hasPermission(ADMIN_PERMISSION)) return List.of();
         if (args.length == 1) {
             return filter(List.of("help", "list", "info", "enable", "load", "disable", "unload",
                     "tp", "teleport", "setspawn", "reload"), args[0]);
         }
-
         if (args.length == 2 && List.of("info", "enable", "load", "disable", "unload", "tp", "teleport")
                 .contains(args[0].toLowerCase(Locale.ROOT))) {
             return worldNames(args[1]);
@@ -230,8 +186,6 @@ public final class WorldCommands implements CommandExecutor, TabCompleter {
     }
 
     private List<String> filter(List<String> values, String prefix) {
-        return values.stream()
-                .filter(value -> value.startsWith(prefix.toLowerCase(Locale.ROOT)))
-                .toList();
+        return values.stream().filter(value -> value.startsWith(prefix.toLowerCase(Locale.ROOT))).toList();
     }
 }
