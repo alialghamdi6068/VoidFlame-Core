@@ -58,7 +58,7 @@ public final class PlayerProfileService {
                 INSERT INTO player_profiles(uuid,name,first_join,last_join,coins,wins,losses,winstreak,best_winstreak,elo,rank,preferences_json,statistics_json)
                 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
                 ON CONFLICT(uuid) DO UPDATE SET name=excluded.name,last_join=excluded.last_join
-                """, uuid.toString(), name, now, now, 0, 0, 0, 0, 0, 1000.0, "member", "{}", "{}");
+                """, uuid.toString(), name, now, now, 0, 0, 0, 0, 0, 1000.0, "player", "{}", "{}");
     }
 
     public CompletableFuture<List<PlayerProfile>> topByElo(int limit) {
