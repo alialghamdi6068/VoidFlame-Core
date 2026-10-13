@@ -1,7 +1,7 @@
 name: VoidFlame-Core
-version: 2.0.0
+version: 2.1.0
 main: net.voidflame.core.VoidFlameCorePlugin
-description: Shared persistence, storage API and infrastructure for VoidFlameMC SMP.
+description: Shared persistence and infrastructure for VoidFlameMC Practice and Duels.
 author: VoidFlame
 website: https://github.com/alialghamdi6068/VoidFlame-Core
 api-version: '26.2'
@@ -14,7 +14,7 @@ softdepend:
 
 commands:
   spawn:
-    description: Return to the VoidFlameMC spawn.
+    description: Return to the main VoidFlameMC Practice spawn.
     usage: /spawn
     permission: voidflame.spawn
   vfrestore:
@@ -28,7 +28,7 @@ commands:
 
 permissions:
   voidflame.spawn:
-    description: Return to the main SMP spawn.
+    description: Return to the main Practice spawn.
     default: true
   voidflame.database.restore:
     description: Restore a validated Core database backup.
