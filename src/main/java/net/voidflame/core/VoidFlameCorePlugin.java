@@ -16,13 +16,6 @@ import net.voidflame.core.storage.ServerSettingsService;
 import net.voidflame.core.world.WorldCommands;
 import net.voidflame.core.world.WorldService;
 import org.bukkit.Bukkit;
-import org.bukkit.GameRule;
-import org.bukkit.World;
-import org.bukkit.event.world.WorldLoadEvent;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -32,7 +25,7 @@ import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.UUID;
 
-public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
+public final class VoidFlameCorePlugin extends JavaPlugin {
     private CoreConfig configuration;
     private CoreLogger coreLogger;
     private CoreScheduler scheduler;
@@ -100,10 +93,7 @@ public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
         getCommand("vfworld").setTabCompleter(worldCommands);
         getCommand("vfrestore").setExecutor(new RestoreCommand(this));
 
-        getServer().getPluginManager().registerEvents(this, this);
-        Bukkit.getScheduler().runTask(this, this::loadEnabledWorlds);
         Bukkit.getScheduler().runTask(this, this::indexInstalledPlugins);
-
         scheduleBackups();
         coreLogger.info("VoidFlame-Core enabled. Database: " + database.databasePath());
     }
@@ -122,18 +112,6 @@ public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
         }
         storage.put("plugins", "registry:last-scan", Long.toString(System.currentTimeMillis()));
         coreLogger.info("Indexed " + getServer().getPluginManager().getPlugins().length + " installed plugins into Core storage.");
-    }
-
-    private void loadEnabledWorlds() {
-        for (String name : worlds.enabledWorlds()) {
-            try {
-                World loaded = worlds.load(name);
-                applySmpRules(loaded);
-                coreLogger.info("World enabled: " + name);
-            } catch (Exception ex) {
-                coreLogger.error("Failed to enable world: " + name, ex);
-            }
-        }
     }
 
     private void scheduleBackups() {
@@ -167,33 +145,6 @@ public final class VoidFlameCorePlugin extends JavaPlugin implements Listener {
         } catch (Exception ex) {
             coreLogger.error("Unable to prune database backups.", ex);
         }
-    }
-
-    @EventHandler
-    public void onWorldLoad(WorldLoadEvent event) {
-        applySmpRules(event.getWorld());
-    }
-
-    private void applySmpRules(World world) {
-        String persistentWorld = getConfig().getString("smp.persistent-world", "world");
-        if (persistentWorld == null) return;
-        String name = world.getName();
-        boolean survivalDimension = name.equalsIgnoreCase(persistentWorld)
-            || name.equalsIgnoreCase(persistentWorld + "_nether")
-            || name.equalsIgnoreCase(persistentWorld + "_the_end");
-        if (!survivalDimension) return;
-        world.setGameRule(GameRule.KEEP_INVENTORY, false);
-        world.setGameRule(GameRule.DO_MOB_LOOT, true);
-    }
-
-    @EventHandler
-    public void onJoin(PlayerJoinEvent event) {
-        playerProfiles.touch(event.getPlayer().getUniqueId(), event.getPlayer().getName());
-    }
-
-    @EventHandler
-    public void onQuit(PlayerQuitEvent event) {
-        storage.upsertPlayer(event.getPlayer().getUniqueId(), event.getPlayer().getName());
     }
 
     @Override
