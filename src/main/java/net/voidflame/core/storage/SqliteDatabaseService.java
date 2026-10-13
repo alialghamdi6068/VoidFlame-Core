@@ -277,7 +277,6 @@ public final class SqliteDatabaseService implements DatabaseService {
         lifecycleLock.writeLock().lock();
         try {
             if (!open) return;
-            open = false;
             executor.shutdown();
         } finally {
             lifecycleLock.writeLock().unlock();
@@ -290,6 +289,8 @@ public final class SqliteDatabaseService implements DatabaseService {
         } catch (InterruptedException interrupted) {
             executor.shutdownNow();
             Thread.currentThread().interrupt();
+        } finally {
+            open = false;
         }
     }
 }
