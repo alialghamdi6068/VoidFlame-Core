@@ -76,10 +76,7 @@ public final class SqliteDatabaseService implements DatabaseService {
             statement.execute("PRAGMA busy_timeout=5000");
             statement.execute("PRAGMA synchronous=NORMAL");
         } catch (SQLException e) {
-            try {
-                connection.close();
-            } catch (SQLException ignored) {
-            }
+            try { connection.close(); } catch (SQLException ignored) { }
             throw e;
         }
         return connection;
@@ -94,13 +91,11 @@ public final class SqliteDatabaseService implements DatabaseService {
         ensureOpen();
         return CompletableFuture.runAsync(() -> {
             lifecycleLock.readLock().lock();
-            try {
-                try (Connection connection = openConnection();
-                     PreparedStatement statement = prepare(connection, sql, parameters)) {
-                    statement.execute();
-                } catch (SQLException e) {
-                    throw new IllegalStateException("Database execution failed.", e);
-                }
+            try (Connection connection = openConnection();
+                 PreparedStatement statement = prepare(connection, sql, parameters)) {
+                statement.execute();
+            } catch (SQLException e) {
+                throw new IllegalStateException("Database execution failed.", e);
             } finally {
                 lifecycleLock.readLock().unlock();
             }
@@ -117,7 +112,9 @@ public final class SqliteDatabaseService implements DatabaseService {
                 return statement.executeUpdate();
             } catch (SQLException e) {
                 throw new IllegalStateException("Database update failed.", e);
-            } finally { lifecycleLock.readLock().unlock(); }
+            } finally {
+                lifecycleLock.readLock().unlock();
+            }
         }, executor);
     }
 
@@ -134,15 +131,15 @@ public final class SqliteDatabaseService implements DatabaseService {
                 int columns = meta.getColumnCount();
                 while (result.next()) {
                     Map<String, Object> row = new LinkedHashMap<>();
-                    for (int i = 1; i <= columns; i++) {
-                        row.put(meta.getColumnLabel(i), result.getObject(i));
-                    }
+                    for (int i = 1; i <= columns; i++) row.put(meta.getColumnLabel(i), result.getObject(i));
                     rows.add(row);
                 }
                 return rows;
             } catch (SQLException e) {
                 throw new IllegalStateException("Database query failed.", e);
-            } finally { lifecycleLock.readLock().unlock(); }
+            } finally {
+                lifecycleLock.readLock().unlock();
+            }
         }, executor);
     }
 
@@ -163,18 +160,16 @@ public final class SqliteDatabaseService implements DatabaseService {
                     }
                     connection.commit();
                 } catch (SQLException e) {
-                    try {
-                        connection.rollback();
-                    } catch (SQLException rollbackError) {
-                        e.addSuppressed(rollbackError);
-                    }
+                    try { connection.rollback(); } catch (SQLException rollbackError) { e.addSuppressed(rollbackError); }
                     throw e;
                 } finally {
                     connection.setAutoCommit(true);
                 }
             } catch (SQLException e) {
                 throw new IllegalStateException("Database transaction failed.", e);
-            } finally { lifecycleLock.readLock().unlock(); }
+            } finally {
+                lifecycleLock.readLock().unlock();
+            }
         }, executor);
     }
 
@@ -194,14 +189,15 @@ public final class SqliteDatabaseService implements DatabaseService {
                 }
 
                 String escaped = uniqueTarget.toAbsolutePath().toString().replace("'", "''");
-                try (Connection connection = openConnection();
-                     var statement = connection.createStatement()) {
+                try (Connection connection = openConnection(); var statement = connection.createStatement()) {
                     statement.execute("VACUUM INTO '" + escaped + "'");
                 }
                 return uniqueTarget;
             } catch (SQLException | IOException e) {
                 throw new IllegalStateException("Unable to create database backup.", e);
-            } finally { lifecycleLock.readLock().unlock(); }
+            } finally {
+                lifecycleLock.readLock().unlock();
+            }
         }, executor);
     }
 
@@ -218,14 +214,23 @@ public final class SqliteDatabaseService implements DatabaseService {
                 if (source.equals(file.toAbsolutePath().normalize())) {
                     throw new IllegalArgumentException("Cannot restore the live database file onto itself.");
                 }
-                try (Connection verification = java.sql.DriverManager.getConnection("jdbc:sqlite:" + source)) {
-                    DatabaseMigrations.apply(verification);
-                    try (var statement = verification.createStatement(); var rs = statement.executeQuery("PRAGMA integrity_check")) {
-                        if (!rs.next() || !"ok".equalsIgnoreCase(rs.getString(1))) {
+
+                // Verify the backup in read-only mode. Never run migrations against a backup,
+                // because validation must not alter the only recoverable copy of user data.
+                try (Connection verification = java.sql.DriverManager.getConnection("jdbc:sqlite:" + source);
+                     var guard = verification.createStatement()) {
+                    guard.execute("PRAGMA query_only=ON");
+                    try (var integrity = guard.executeQuery("PRAGMA integrity_check")) {
+                        if (!integrity.next() || !"ok".equalsIgnoreCase(integrity.getString(1))) {
                             throw new IllegalStateException("Backup integrity check failed.");
                         }
                     }
+                    try (var schema = guard.executeQuery(
+                            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='schema_migrations'")) {
+                        if (!schema.next()) throw new IllegalStateException("Backup is not a recognized VoidFlame-Core database.");
+                    }
                 }
+
                 // Always snapshot the live database before replacing it.
                 Path safetyDir = file.getParent().resolve("backups");
                 Files.createDirectories(safetyDir);
@@ -235,10 +240,12 @@ public final class SqliteDatabaseService implements DatabaseService {
                 try (Connection current = openConnection(); var snapshot = current.createStatement()) {
                     snapshot.execute("VACUUM INTO '" + escapedSafety + "'");
                 }
+
                 Path temp = file.resolveSibling(file.getFileName() + ".restore.tmp");
                 Files.copy(source, temp, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
                 try {
-                    Files.move(temp, file, java.nio.file.StandardCopyOption.REPLACE_EXISTING, java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+                    Files.move(temp, file, java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                            java.nio.file.StandardCopyOption.ATOMIC_MOVE);
                 } catch (java.nio.file.AtomicMoveNotSupportedException ignored) {
                     Files.move(temp, file, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
                 }
@@ -254,27 +261,27 @@ public final class SqliteDatabaseService implements DatabaseService {
 
     private static PreparedStatement prepare(Connection connection, String sql, Object... parameters) throws SQLException {
         PreparedStatement statement = connection.prepareStatement(sql);
-        for (int i = 0; i < parameters.length; i++) {
-            statement.setObject(i + 1, parameters[i]);
-        }
+        for (int i = 0; i < parameters.length; i++) statement.setObject(i + 1, parameters[i]);
         return statement;
     }
 
     @Override
-    public boolean isOpen() {
-        return open;
-    }
+    public boolean isOpen() { return open; }
 
     @Override
-    public String databasePath() {
-        return file.toAbsolutePath().toString();
-    }
+    public String databasePath() { return file.toAbsolutePath().toString(); }
 
     @Override
     public void close() {
         if (!open) return;
-        open = false;
-        executor.shutdown();
+        lifecycleLock.writeLock().lock();
+        try {
+            if (!open) return;
+            open = false;
+            executor.shutdown();
+        } finally {
+            lifecycleLock.writeLock().unlock();
+        }
         try {
             if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
                 executor.shutdownNow();
