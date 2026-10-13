@@ -16,6 +16,7 @@ import net.voidflame.core.storage.ServerSettingsService;
 import net.voidflame.core.world.WorldCommands;
 import net.voidflame.core.world.WorldService;
 import org.bukkit.Bukkit;
+import org.bukkit.World;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -93,9 +94,33 @@ public final class VoidFlameCorePlugin extends JavaPlugin {
         getCommand("vfworld").setTabCompleter(worldCommands);
         getCommand("vfrestore").setExecutor(new RestoreCommand(this));
 
+        getServer().getPluginManager().registerEvents(new org.bukkit.event.Listener() {
+            @org.bukkit.event.EventHandler
+            public void onJoin(org.bukkit.event.player.PlayerJoinEvent event) {
+                playerProfiles.touch(event.getPlayer().getUniqueId(), event.getPlayer().getName());
+            }
+
+            @org.bukkit.event.EventHandler
+            public void onQuit(org.bukkit.event.player.PlayerQuitEvent event) {
+                storage.upsertPlayer(event.getPlayer().getUniqueId(), event.getPlayer().getName());
+            }
+        }, this);
+
+        Bukkit.getScheduler().runTask(this, this::loadEnabledWorlds);
         Bukkit.getScheduler().runTask(this, this::indexInstalledPlugins);
         scheduleBackups();
         coreLogger.info("VoidFlame-Core enabled. Database: " + database.databasePath());
+    }
+
+    private void loadEnabledWorlds() {
+        for (String name : worlds.enabledWorlds()) {
+            try {
+                World loaded = worlds.load(name);
+                coreLogger.info("Practice world enabled: " + loaded.getName());
+            } catch (Exception ex) {
+                coreLogger.error("Failed to enable configured world: " + name, ex);
+            }
+        }
     }
 
     private void indexInstalledPlugins() {
