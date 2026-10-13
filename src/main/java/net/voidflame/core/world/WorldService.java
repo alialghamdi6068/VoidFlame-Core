@@ -145,6 +145,11 @@ public final class WorldService {
         plugin.saveConfig();
     }
 
+    public String mainSpawnWorld() {
+        String configured = plugin.getConfig().getString("spawn.world", "duelpvp");
+        return configured == null || configured.isBlank() ? null : configured;
+    }
+
     public void teleportToSpawn(Player player, String worldName) {
         World world = get(worldName);
         if (world == null) {
