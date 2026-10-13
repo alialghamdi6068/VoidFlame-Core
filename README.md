@@ -1,39 +1,41 @@
 # VoidFlame-Core
 
-The shared persistence and integration foundation for **VoidFlameMC SMP**. This repository replaces the old Practice/Duels product direction; new features must be designed for persistent survival and the current DonutSMP-inspired gameplay target, with VoidFlameMC branding and its own /shop.
+The shared persistence and integration foundation for **VoidFlameMC Practice & Duels**. This repository is for the Practice/Duels server direction, not SMP or survival gameplay.
 
 ## Core owns
 
-- One SQLite database at plugins/VoidFlame-Core/database.db.
+- One SQLite database at `plugins/VoidFlame-Core/database.db`.
 - Transaction-safe schema migrations, WAL, foreign keys, busy timeout and integrity checks.
 - Shared storage APIs, player profiles/preferences, server settings and plugin registry.
-- Central economy/market/social persistence schema used by the custom modules.
+- Practice data contracts for player profiles, ELO, wins/losses, streaks, duel matches, FFA statistics, kits/layouts, ranks, reports, audit logs and replays.
 - Automatic database backups (30-minute default, 10 retained) and validated restore.
 - Common scheduling, logging and service registration.
-- Persistent single-world SMP configuration and administrative world tooling.
+- Spawn/world settings and restricted administrative world management.
 
-## Modules that consume Core
+## Practice modules that consume Core
 
+- VoidFlame-Duels
+- VoidFlame-Arenas
+- VoidFlame-Kits
+- VoidFlame-Stats
+- VoidFlame-Ranks
+- VoidFlame-Menus
+- VoidFlame-Logs
 - VoidFlame-Security
-- VoidFlame-Economy
-- VoidFlame-Shop
-- VoidFlame-Sell
-- VoidFlame-AH
-- VoidFlame-Order
-- VoidFlame-Social
-- VoidFlame-UI
 
-Ranks and permissions are managed by **LuckPerms**, not a custom ranks plugin.
+Feature plugins must consume Core services and must not create per-plugin SQLite databases. LuckPerms may be used to grant permissions; it does not replace the Practice/Ranks feature requirements.
 
 ## Data and compatibility
 
-Custom VoidFlame modules must use the Core database and must not create per-plugin SQLite databases. Module tables are centrally migrated. Historical Practice/Duels tables are retained during the transition to avoid destructive data loss, but they are not part of the new SMP feature design. Do not drop or overwrite existing user data as part of an ordinary upgrade.
+Core is infrastructure only. Matchmaking, arenas, kit editing, stats, ranks, menus and security behavior belong to their owning plugins. Shared data schemas and APIs stay centralized in Core. Historical tables are retained during migrations to avoid destructive data loss. Never delete, reset or overwrite existing player, kit, match, or settings data during a normal upgrade.
+
+The default spawn world is `duelpvp`; configure `spawn.world` and `worlds.enabled` for the actual arena/spawn world names on your server. Public world-listing and world-teleport commands are not exposed; players use `/spawn`, while staff manage worlds through `/vfworld`.
 
 ## Build
 
 - Paper API: 26.2
 - Java toolchain: 25
-- Build: ./gradlew build
-- Output: build/libs/VoidFlame-Core.jar
+- Build: `./gradlew build`
+- Output: `build/libs/VoidFlame-Core.jar`
 
-Core is infrastructure only. Economy, selling, auctions, orders, social features and player-facing modern UI belong in their owning plugins.
+Every change must pass Java 25 / Paper 26.2 CI and storage tests before being treated as release-ready.
