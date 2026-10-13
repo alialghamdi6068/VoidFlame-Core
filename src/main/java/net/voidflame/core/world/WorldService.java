@@ -137,6 +137,7 @@ public final class WorldService {
     public void setSpawn(Player player) {
         World world = player.getWorld();
         world.setSpawnLocation(player.getLocation());
+        plugin.getConfig().set("spawn.world", world.getName());
         plugin.getConfig().set("worlds.spawns." + world.getName() + ".x", player.getLocation().getX());
         plugin.getConfig().set("worlds.spawns." + world.getName() + ".y", player.getLocation().getY());
         plugin.getConfig().set("worlds.spawns." + world.getName() + ".z", player.getLocation().getZ());
