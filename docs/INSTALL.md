@@ -1,45 +1,35 @@
-# VoidFlameMC SMP — Installation
+# VoidFlameMC Practice & Duels — Core Installation
 
 ## Runtime
 - Paper 26.2
 - Java 25
-- Use one persistent survival world named `world` unless `smp.persistent-world` is changed in VoidFlame-Core's config.
+- This is a Practice/Duels server, not SMP. Configure `spawn.world` and `worlds.enabled` in Core's config to match the main spawn and arena worlds.
 - Keep `online-mode=true` unless the server owner explicitly decides otherwise.
 
 ## Custom plugins
-Install the built JARs from these repositories into the server's `plugins/` directory:
+Install the verified JARs from the existing repositories into the server's `plugins/` directory:
 
 1. `VoidFlame-Core`
-2. `VoidFlame-Security`
-3. `VoidFlame-Economy`
-4. `VoidFlame-AH`
-5. `VoidFlame-Order`
-6. `VoidFlame-Sell`
-7. `VoidFlame-Shop`
-8. `VoidFlame-Social`
-9. `VoidFlame-UI`
+2. `VoidFlame-Duels`
+3. `VoidFlame-Arenas`
+4. `VoidFlame-Kits`
+5. `VoidFlame-Stats`
+6. `VoidFlame-Ranks`
+7. `VoidFlame-Menus`
+8. `VoidFlame-Logs`
+9. `VoidFlame-Security`
 
-Also install **LuckPerms** for groups and permissions. Do not install a custom VoidFlame-Ranks plugin.
+Core owns `plugins/VoidFlame-Core/database.db` and its backup directory. Do not create separate databases for feature plugins. Do not install SMP-only feature modules as replacements for the Practice modules.
 
-Paper resolves the declared plugin dependencies automatically. Do not create separate databases for feature plugins. Core owns `plugins/VoidFlame-Core/database.db` and its backup directory.
+## Core commands
+- `/spawn` — return to the configured main Practice spawn.
+- `/vfworld <list|info|enable|disable|load|unload|tp|setspawn|reload>` — staff-only world management.
+- `/vfrestore <backup-file>` — restore a validated database backup; requires `voidflame.database.restore` and a stopped/restarted-safe maintenance window.
 
-## Main commands
-- `/smp` — main Dialog dashboard
-- `/spawn` — survival spawn
-- `/shop [page]` — Quick Buy Dialog with exact item metadata matching and a 3x displayed unit-price ceiling
-- `/shardshop [page]` — premium shard catalog
-- `/shards` — shard balance
-- `/sell` and `/sellhistory` — sell items and view recent sales
-- `/ah [page <number>]` — auction house; `/ah sell <price>` lists the held item
-- `/orders` — funded buyer orders and claimable deliveries
-- `/order <material-or-buyer>` — search open orders
-- `/orders claim` — claim purchased items and returned listings
-- `/friend`, `/friends`, `/follow`, `/following` — social features
-- `/sethome [name]`, `/home [name]`, `/delhome <name>`, `/rtp`, `/tpa <player>`
-- `/profile`, `/stats [player]`, `/baltop`, `/settings`
-
-## Full-loot rules
-Full loot is enabled in the configured survival world and its conventional `_nether` and `_the_end` dimensions. Player raiding and ordinary block breaking are allowed. Security features must prevent exploits without disabling normal survival behavior.
+## Permissions
+- `voidflame.spawn` defaults to everyone.
+- `voidflame.world.manage` defaults to operators.
+- `voidflame.database.restore` defaults to operators.
 
 ## Verification
-Core and Security have successful Java 25 / Paper 26.2 CI builds. The remaining feature repositories must have GitHub Actions enabled and a successful build run before their JARs are considered release-ready. Do not install unverified artifacts on a live server.
+Run `./gradlew build` using Java 25. Do not install an artifact until its GitHub Actions build and tests succeed. Back up the Core data folder before upgrading an existing server; normal upgrades must not erase or replace the existing database.
