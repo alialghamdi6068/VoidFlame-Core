@@ -145,46 +145,20 @@ public final class SqliteDatabaseService implements DatabaseService {
 
     @Override
     public CompletableFuture<Void> transaction(List<Statement> statements) {
-        return transactionWithCounts(statements).thenApply(ignored -> null);
-    }
-
-    @Override
-    public CompletableFuture<List<Integer>> transactionWithCounts(List<Statement> statements) {
-        return runTransaction(statements, null);
-    }
-
-    @Override
-    public CompletableFuture<List<Integer>> transactionExpectingCounts(List<Statement> statements, List<Integer> expectedRows) {
-        return runTransaction(statements, expectedRows);
-    }
-
-    private CompletableFuture<List<Integer>> runTransaction(List<Statement> statements, List<Integer> expectedRows) {
         ensureOpen();
-        if (statements == null || statements.isEmpty()) return CompletableFuture.completedFuture(List.of());
+        if (statements == null || statements.isEmpty()) return CompletableFuture.completedFuture(null);
 
-        return CompletableFuture.supplyAsync(() -> {
+        return CompletableFuture.runAsync(() -> {
             lifecycleLock.readLock().lock();
             try (Connection connection = openConnection()) {
                 connection.setAutoCommit(false);
                 try {
-                    List<Integer> affectedRows = new ArrayList<>(statements.size());
-                    for (int index = 0; index < statements.size(); index++) {
-                        Statement item = statements.get(index);
-                        int affected;
+                    for (Statement item : statements) {
                         try (PreparedStatement statement = prepare(connection, item.sql(), item.parameters())) {
-                            affected = statement.executeUpdate();
-                        }
-                        affectedRows.add(affected);
-                        if (expectedRows != null && index < expectedRows.size()) {
-                            int expected = expectedRows.get(index);
-                            if (expected >= 0 && affected != expected) {
-                                throw new SQLException("Transaction row-count expectation failed at statement " + index
-                                        + ": expected " + expected + ", got " + affected + ".");
-                            }
+                            statement.executeUpdate();
                         }
                     }
                     connection.commit();
-                    return List.copyOf(affectedRows);
                 } catch (SQLException e) {
                     try { connection.rollback(); } catch (SQLException rollbackError) { e.addSuppressed(rollbackError); }
                     throw e;

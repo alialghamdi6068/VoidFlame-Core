@@ -1,40 +1,35 @@
 # VoidFlame-Core
 
-The shared persistence and integration foundation for **VoidFlameMC SMP** on Paper 26.2 / Java 25.
+The shared persistence and integration foundation for **VoidFlameMC Practice & Duels**. This repository is for the Practice/Duels server direction, not SMP or survival gameplay.
 
-## Core responsibilities
+## Core owns
 
-- One authoritative SQLite database at `plugins/VoidFlame-Core/database.db`; feature plugins must never create separate databases.
+- One SQLite database at `plugins/VoidFlame-Core/database.db`.
 - Transaction-safe schema migrations, WAL, foreign keys, busy timeout and integrity checks.
-- Shared database, player profile, player preference, server settings, economy and plugin-registry APIs.
-- SMP player profiles with kills, deaths and playtime, tracked centrally by Core.
-- Shared economy accounts and transaction ledger for balances and shards.
-- Central schemas for sell prices, Auction House listings, funded buyer orders, order deliveries, friends/following, homes and player preferences.
-- Preserved legacy Practice/Duels tables for non-destructive migrations; those tables do not define the active SMP gameplay direction.
+- Shared storage APIs, player profiles/preferences, server settings and plugin registry.
+- Practice data contracts for player profiles, ELO, wins/losses, streaks, duel matches, FFA statistics, kits/layouts, ranks, reports, audit logs and replays.
 - Automatic database backups (30-minute default, 10 retained) and validated restore.
+- Common scheduling, logging and service registration.
 - Spawn/world settings and restricted administrative world management.
 
-## SMP feature plugins that consume Core
+## Practice modules that consume Core
 
-- `VoidFlame-Economy`: balances, shards and player-to-player payments.
-- `VoidFlame-Shop`: retained `/shop` Quick Buy entry point.
-- `VoidFlame-Sell`: `/sell` with buyer-order routing.
-- `VoidFlame-AH`: player Auction House.
-- `VoidFlame-Order`: funded buyer orders and claimable deliveries.
-- `VoidFlame-Social`: friends, following, homes, random teleport and player teleport requests.
-- `VoidFlame-UI`: native Minecraft Dialog navigation and SMP settings/stats.
-- `VoidFlame-Security` and `VoidFlame-Logs`: security and audit integrations where installed.
-- `VoidFlame-TAB`: the custom player-list presentation.
+- VoidFlame-Duels
+- VoidFlame-Arenas
+- VoidFlame-Kits
+- VoidFlame-Stats
+- VoidFlame-Ranks
+- VoidFlame-Menus
+- VoidFlame-Logs
+- VoidFlame-Security
 
-LuckPerms is the permission/rank authority for the SMP setup. Do not install the legacy custom Practice Ranks module as a second permission authority.
+Feature plugins must consume Core services and must not create per-plugin SQLite databases. LuckPerms may be used to grant permissions; it does not replace the Practice/Ranks feature requirements.
 
 ## Data and compatibility
 
-Core is infrastructure, not a feature-plugin collection. All SMP modules use the same Core database and shared economy service. Money mutations must use Core's economy API so balance checks and ledger entries remain consistent. Schema changes belong in Core migrations; feature plugins must not silently create their own database or independent copies of shared state.
+Core is infrastructure only. Matchmaking, arenas, kit editing, stats, ranks, menus and security behavior belong to their owning plugins. Shared data schemas and APIs stay centralized in Core. Historical tables are retained during migrations to avoid destructive data loss. Never delete, reset or overwrite existing player, kit, match, or settings data during a normal upgrade.
 
-The current configured persistent world is `duelpvp`, set by `spawn.world` and `worlds.enabled`. Keep that name if it contains the existing world data; do not rename or replace the world during a normal plugin update. Players use `/spawn`; administrative world management uses `/vfworld`.
-
-Historical tables and player data are retained during migrations. Never reset, delete or overwrite existing player, market, home, economy or settings data during a normal upgrade. Database restore requires a server restart.
+The default spawn world is `duelpvp`; configure `spawn.world` and `worlds.enabled` for the actual arena/spawn world names on your server. Public world-listing and world-teleport commands are not exposed; players use `/spawn`, while staff manage worlds through `/vfworld`.
 
 ## Build
 

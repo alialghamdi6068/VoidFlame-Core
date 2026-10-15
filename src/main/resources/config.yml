@@ -1,8 +1,7 @@
-# VoidFlame-Core | VoidFlameMC SMP
+# VoidFlame-Core | VoidFlameMC Practice & Duels
 # Paper 26.2 / Java 25
 # All custom VoidFlame plugins share plugins/VoidFlame-Core/database.db.
 # Never create a separate database in a feature plugin.
-# The configured duelpvp world is preserved as the persistent SMP world; do not rename it if it contains live world data.
 
 settings:
   metrics: false

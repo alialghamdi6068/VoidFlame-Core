@@ -38,7 +38,6 @@ public final class VoidFlameCorePlugin extends JavaPlugin {
     private ServerSettingsService serverSettings;
     private EconomyService economy;
     private WorldService worlds;
-    private net.voidflame.core.storage.SmpPlayerStatsListener smpPlayerStats;
 
     @Override
     public void onLoad() {
@@ -107,10 +106,6 @@ public final class VoidFlameCorePlugin extends JavaPlugin {
             }
         }, this);
 
-        smpPlayerStats = new net.voidflame.core.storage.SmpPlayerStatsListener(this, database);
-        getServer().getPluginManager().registerEvents(smpPlayerStats, this);
-        getServer().getScheduler().runTaskTimer(this, smpPlayerStats::flushOnlineSessions, 1200L, 1200L);
-
         Bukkit.getScheduler().runTask(this, this::loadEnabledWorlds);
         Bukkit.getScheduler().runTask(this, this::indexInstalledPlugins);
         scheduleBackups();
@@ -121,7 +116,7 @@ public final class VoidFlameCorePlugin extends JavaPlugin {
         for (String name : worlds.enabledWorlds()) {
             try {
                 World loaded = worlds.load(name);
-                coreLogger.info("Configured SMP world enabled: " + loaded.getName());
+                coreLogger.info("Practice world enabled: " + loaded.getName());
             } catch (Exception ex) {
                 coreLogger.error("Failed to enable configured world: " + name, ex);
             }
@@ -188,13 +183,6 @@ public final class VoidFlameCorePlugin extends JavaPlugin {
         getServer().getServicesManager().unregister(ServiceRegistry.class, this);
         if (services != null) services.clear();
         if (scheduler != null) scheduler.cancelAll();
-        if (smpPlayerStats != null) {
-            try {
-                smpPlayerStats.flushOnlineSessions().join();
-            } catch (RuntimeException ex) {
-                if (coreLogger != null) coreLogger.error("Unable to flush SMP playtime during shutdown.", ex);
-            }
-        }
         if (database != null) database.close();
         if (coreLogger != null) coreLogger.info("VoidFlame-Core disabled.");
     }
