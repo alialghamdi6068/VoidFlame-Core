@@ -145,20 +145,27 @@ public final class SqliteDatabaseService implements DatabaseService {
 
     @Override
     public CompletableFuture<Void> transaction(List<Statement> statements) {
-        ensureOpen();
-        if (statements == null || statements.isEmpty()) return CompletableFuture.completedFuture(null);
+        return transactionWithCounts(statements).thenApply(ignored -> null);
+    }
 
-        return CompletableFuture.runAsync(() -> {
+    @Override
+    public CompletableFuture<List<Integer>> transactionWithCounts(List<Statement> statements) {
+        ensureOpen();
+        if (statements == null || statements.isEmpty()) return CompletableFuture.completedFuture(List.of());
+
+        return CompletableFuture.supplyAsync(() -> {
             lifecycleLock.readLock().lock();
             try (Connection connection = openConnection()) {
                 connection.setAutoCommit(false);
                 try {
+                    List<Integer> affectedRows = new ArrayList<>(statements.size());
                     for (Statement item : statements) {
                         try (PreparedStatement statement = prepare(connection, item.sql(), item.parameters())) {
-                            statement.executeUpdate();
+                            affectedRows.add(statement.executeUpdate());
                         }
                     }
                     connection.commit();
+                    return List.copyOf(affectedRows);
                 } catch (SQLException e) {
                     try { connection.rollback(); } catch (SQLException rollbackError) { e.addSuppressed(rollbackError); }
                     throw e;
