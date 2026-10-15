@@ -150,6 +150,15 @@ public final class SqliteDatabaseService implements DatabaseService {
 
     @Override
     public CompletableFuture<List<Integer>> transactionWithCounts(List<Statement> statements) {
+        return runTransaction(statements, null);
+    }
+
+    @Override
+    public CompletableFuture<List<Integer>> transactionExpectingCounts(List<Statement> statements, List<Integer> expectedRows) {
+        return runTransaction(statements, expectedRows);
+    }
+
+    private CompletableFuture<List<Integer>> runTransaction(List<Statement> statements, List<Integer> expectedRows) {
         ensureOpen();
         if (statements == null || statements.isEmpty()) return CompletableFuture.completedFuture(List.of());
 
@@ -159,9 +168,19 @@ public final class SqliteDatabaseService implements DatabaseService {
                 connection.setAutoCommit(false);
                 try {
                     List<Integer> affectedRows = new ArrayList<>(statements.size());
-                    for (Statement item : statements) {
+                    for (int index = 0; index < statements.size(); index++) {
+                        Statement item = statements.get(index);
+                        int affected;
                         try (PreparedStatement statement = prepare(connection, item.sql(), item.parameters())) {
-                            affectedRows.add(statement.executeUpdate());
+                            affected = statement.executeUpdate();
+                        }
+                        affectedRows.add(affected);
+                        if (expectedRows != null && index < expectedRows.size()) {
+                            int expected = expectedRows.get(index);
+                            if (expected >= 0 && affected != expected) {
+                                throw new SQLException("Transaction row-count expectation failed at statement " + index
+                                        + ": expected " + expected + ", got " + affected + ".");
+                            }
                         }
                     }
                     connection.commit();
