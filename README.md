@@ -15,19 +15,15 @@ The shared persistence and integration foundation for **VoidFlameMC Practice & D
 ## Practice modules that consume Core
 
 - VoidFlame-Duels
-- VoidFlame-Arenas
-- VoidFlame-Kits
-- VoidFlame-Stats
-- VoidFlame-Ranks
-- VoidFlame-Menus
-- VoidFlame-Logs
+- VoidFlame-Admin
+- VoidFlame-Duels (owns arenas, kits, queues, matchmaking and match lifecycle)
 - VoidFlame-Security
 
 Feature plugins must consume Core services and must not create per-plugin SQLite databases. LuckPerms may be used to grant permissions; it does not replace the Practice/Ranks feature requirements.
 
 ## Data and compatibility
 
-Core is infrastructure only. Matchmaking, arenas, kit editing, stats, ranks, menus and security behavior belong to their owning plugins. Shared data schemas and APIs stay centralized in Core. Historical tables are retained during migrations to avoid destructive data loss. Never delete, reset or overwrite existing player, kit, match, or settings data during a normal upgrade.
+Core is infrastructure only. Matchmaking, arena allocation/reset, kit editing, duels, FFA, and practice gameplay belong to VoidFlame-Duels. Administration belongs to VoidFlame-Admin; security enforcement belongs to VoidFlame-Security. Core owns shared persistence and service contracts. Shared data schemas and APIs stay centralized in Core. Historical tables are retained during migrations to avoid destructive data loss. Never delete, reset or overwrite existing player, kit, match, or settings data during a normal upgrade.
 
 The default spawn world is `duelpvp`; configure `spawn.world` and `worlds.enabled` for the actual arena/spawn world names on your server. Public world-listing and world-teleport commands are not exposed; players use `/spawn`, while staff manage worlds through `/vfworld`.
 
