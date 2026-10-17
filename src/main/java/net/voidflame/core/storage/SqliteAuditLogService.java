@@ -19,7 +19,7 @@ public final class SqliteAuditLogService implements AuditLogService {
         String safeAction = action == null || action.isBlank() ? "UNKNOWN" : action;
         String safeTarget = target == null ? "" : target;
         String safeMetadata = metadata == null ? "" : metadata;
-        String metadataJson = "{\\"detail\\":\\"" + jsonEscape(safeMetadata) + "\\"}";
+        String metadataJson = "{\"detail\":\"" + jsonEscape(safeMetadata) + "\"}";
         return database.execute(
                 "INSERT INTO audit_logs(actor, action, target, timestamp, metadata_json) VALUES (?, ?, ?, ?, ?)",
                 safeActor, safeAction, safeTarget, Instant.now().toEpochMilli(), metadataJson
@@ -27,10 +27,10 @@ public final class SqliteAuditLogService implements AuditLogService {
     }
 
     private static String jsonEscape(String value) {
-        return value.replace("\\\\", "\\\\\\\\")
-                .replace("\\\"", "\\\\\"")
-                .replace("\\r", "\\\\r")
-                .replace("\\n", "\\\\n")
-                .replace("\\t", "\\\\t");
+        return value.replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\r", "\\r")
+                .replace("\n", "\\n")
+                .replace("\t", "\\t");
     }
 }
