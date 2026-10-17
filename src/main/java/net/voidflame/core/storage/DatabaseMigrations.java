@@ -364,6 +364,31 @@ final class DatabaseMigrations {
                     ALTER TABLE order_deliveries ADD COLUMN sale_amount INTEGER NOT NULL DEFAULT 0;
                     ALTER TABLE order_deliveries ADD COLUMN settled INTEGER NOT NULL DEFAULT 1;
                     CREATE INDEX IF NOT EXISTS idx_order_deliveries_settlement ON order_deliveries(settled, created_at);
+                    """),
+                new Migration(13, """
+                    CREATE TRIGGER IF NOT EXISTS trg_duel_match_stats_after_insert
+                    AFTER INSERT ON duel_matches
+                    WHEN NEW.winner IS NOT NULL AND NEW.loser IS NOT NULL
+                    BEGIN
+                        UPDATE player_profiles SET
+                            wins = wins + CASE WHEN uuid = NEW.winner THEN 1 ELSE 0 END,
+                            losses = losses + CASE WHEN uuid = NEW.loser THEN 1 ELSE 0 END,
+                            winstreak = CASE
+                                WHEN uuid = NEW.winner THEN winstreak + 1
+                                WHEN uuid = NEW.loser THEN 0
+                                ELSE winstreak
+                            END,
+                            best_winstreak = CASE
+                                WHEN uuid = NEW.winner THEN MAX(best_winstreak, winstreak + 1)
+                                ELSE best_winstreak
+                            END,
+                            elo = MAX(0, elo + CASE
+                                WHEN uuid = NEW.player_a THEN NEW.elo_change_a
+                                WHEN uuid = NEW.player_b THEN NEW.elo_change_b
+                                ELSE 0
+                            END)
+                        WHERE uuid IN (NEW.winner, NEW.loser);
+                    END;
                     """)
 
         );
@@ -371,9 +396,15 @@ final class DatabaseMigrations {
         for (Migration migration : migrations) {
             if (isApplied(connection, migration.version())) continue;
             try (var statement = connection.createStatement()) {
-                for (String sql : migration.sql().split(";")) {
-                    String trimmed = sql.trim();
-                    if (!trimmed.isEmpty()) statement.executeUpdate(trimmed);
+                String migrationSql = migration.sql().trim();
+                if (migrationSql.regionMatches(true, 0, "CREATE TRIGGER", 0, "CREATE TRIGGER".length())) {
+                    // SQLite trigger bodies contain semicolons; execute the trigger as one statement.
+                    statement.executeUpdate(migrationSql);
+                } else {
+                    for (String sql : migration.sql().split(";")) {
+                        String trimmed = sql.trim();
+                        if (!trimmed.isEmpty()) statement.executeUpdate(trimmed);
+                    }
                 }
             }
             try (var statement = connection.prepareStatement(
