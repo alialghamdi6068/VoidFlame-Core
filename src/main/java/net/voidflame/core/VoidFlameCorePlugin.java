@@ -2,6 +2,8 @@ package net.voidflame.core;
 
 import net.voidflame.core.api.ServiceRegistry;
 import net.voidflame.core.api.EconomyService;
+import net.voidflame.core.api.AuditLogService;
+import net.voidflame.core.api.MatchResultService;
 import net.voidflame.core.config.CoreConfig;
 import net.voidflame.core.logging.CoreLogger;
 import net.voidflame.core.scheduler.CoreScheduler;
@@ -10,6 +12,8 @@ import net.voidflame.core.storage.SqliteEconomyService;
 import net.voidflame.core.storage.SqliteDatabaseService;
 import net.voidflame.core.storage.StorageService;
 import net.voidflame.core.storage.SqliteStorageService;
+import net.voidflame.core.storage.SqliteAuditLogService;
+import net.voidflame.core.storage.SqliteMatchResultService;
 import net.voidflame.core.storage.PlayerProfileService;
 import net.voidflame.core.storage.PlayerSettingsService;
 import net.voidflame.core.storage.ServerSettingsService;
@@ -78,6 +82,10 @@ public final class VoidFlameCorePlugin extends JavaPlugin {
         services.register(PlayerSettingsService.class, playerSettings);
         services.register(ServerSettingsService.class, serverSettings);
         services.register(EconomyService.class, economy);
+        AuditLogService auditLogs = new SqliteAuditLogService(database);
+        MatchResultService matchResults = new SqliteMatchResultService(database, getLogger());
+        services.register(AuditLogService.class, auditLogs);
+        services.register(MatchResultService.class, matchResults);
 
         getServer().getServicesManager().register(ServiceRegistry.class, services, this, ServicePriority.Highest);
         getServer().getServicesManager().register(DatabaseService.class, database, this, ServicePriority.Highest);
@@ -86,6 +94,8 @@ public final class VoidFlameCorePlugin extends JavaPlugin {
         getServer().getServicesManager().register(PlayerSettingsService.class, playerSettings, this, ServicePriority.Highest);
         getServer().getServicesManager().register(ServerSettingsService.class, serverSettings, this, ServicePriority.Highest);
         getServer().getServicesManager().register(EconomyService.class, economy, this, ServicePriority.Highest);
+        getServer().getServicesManager().register(AuditLogService.class, auditLogs, this, ServicePriority.Highest);
+        getServer().getServicesManager().register(MatchResultService.class, matchResults, this, ServicePriority.Highest);
 
         WorldCommands worldCommands = new WorldCommands(worlds);
         getCommand("spawn").setExecutor(worldCommands);
@@ -174,6 +184,7 @@ public final class VoidFlameCorePlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        getServer().getServicesManager().unregisterAll(this);
         getServer().getServicesManager().unregister(DatabaseService.class, this);
         getServer().getServicesManager().unregister(StorageService.class, this);
         getServer().getServicesManager().unregister(PlayerProfileService.class, this);
