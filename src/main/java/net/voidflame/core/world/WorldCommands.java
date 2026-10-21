@@ -57,6 +57,10 @@ public final class WorldCommands implements CommandExecutor, TabCompleter {
     }
 
     private boolean admin(CommandSender sender, String[] args) {
+        if (sender instanceof Player player && net.voidflame.core.CoreAdminAccess.isBedrock(player)) {
+            sender.sendMessage(ChatColor.RED + "Java staff only.");
+            return true;
+        }
         if (!sender.hasPermission(ADMIN_PERMISSION)) {
             sender.sendMessage(ChatColor.RED + "No permission.");
             return true;
