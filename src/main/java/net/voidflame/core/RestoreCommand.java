@@ -14,6 +14,10 @@ public final class RestoreCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (sender instanceof org.bukkit.entity.Player player && CoreAdminAccess.isBedrock(player)) {
+            sender.sendMessage("§cJava staff only.");
+            return true;
+        }
         if (!sender.hasPermission("voidflame.database.restore")) {
             sender.sendMessage("§cNo permission.");
             return true;
