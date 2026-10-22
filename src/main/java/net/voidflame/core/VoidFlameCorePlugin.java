@@ -173,7 +173,12 @@ public final class VoidFlameCorePlugin extends JavaPlugin {
         Path directory = getDataFolder().toPath().resolve("backups");
         try (var stream = Files.list(directory)) {
             var backups = stream
-                    .filter(path -> path.getFileName().toString().startsWith("database-") && path.toString().endsWith(".db"))
+                    .filter(path -> {
+                        String name = path.getFileName().toString();
+                        // Keep pre-restore safety snapshots outside normal backup retention.
+                        return name.startsWith("database-") && name.endsWith(".db")
+                                && !name.startsWith("database-pre-restore-");
+                    })
                     .sorted(Comparator.comparing(Path::toString).reversed())
                     .toList();
             for (int i = keep; i < backups.size(); i++) Files.deleteIfExists(backups.get(i));
