@@ -28,7 +28,8 @@ public final class RestoreCommand implements CommandExecutor {
         }
         Path backup = plugin.getDataFolder().toPath().resolve("backups").resolve(args[0]).normalize();
         Path backups = plugin.getDataFolder().toPath().resolve("backups").normalize();
-        if (!backup.startsWith(backups) || !Files.isRegularFile(backup)) {
+        if (!backup.startsWith(backups) || !Files.isRegularFile(backup) || Files.isSymbolicLink(backup)
+                || !backup.getParent().equals(backups)) {
             sender.sendMessage("§cBackup file not found.");
             return true;
         }
