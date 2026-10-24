@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 
@@ -18,6 +19,27 @@ class SqliteDatabaseServiceTest {
             storage.put("test", "key", "value").join();
             assertTrue(db.databasePath().endsWith("database.db"));
             assertEquals("value", storage.get("test", "key").join());
+        } finally {
+            db.close();
+        }
+    }
+
+    @Test
+    void restoreRejectsSymbolicLinkBackups(@TempDir Path temp) throws Exception {
+        SqliteDatabaseService db = new SqliteDatabaseService(temp);
+        try {
+            Path backups = temp.resolve("backups");
+            Path backup = db.backup(backups).join();
+            Path link = backups.resolve("linked-backup.db");
+            try {
+                Files.createSymbolicLink(link, backup.getFileName());
+            } catch (UnsupportedOperationException | java.io.IOException | SecurityException unavailable) {
+                return; // The current filesystem or runner does not permit symbolic links.
+            }
+
+            assertThrows(java.util.concurrent.CompletionException.class, () -> db.restore(link).join());
+            assertTrue(Files.isRegularFile(db.databasePath() == null ? temp.resolve("database.db")
+                    : Path.of(db.databasePath())));
         } finally {
             db.close();
         }
