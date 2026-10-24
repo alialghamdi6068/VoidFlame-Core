@@ -49,6 +49,25 @@ class SqliteDatabaseServiceTest {
     }
 
     @Test
+    void restoreRejectsValidDatabaseOutsideApprovedBackupDirectory(@TempDir Path temp) throws Exception {
+        SqliteDatabaseService db = new SqliteDatabaseService(temp);
+        try {
+            db.execute("CREATE TABLE IF NOT EXISTS path_guard_test(id INTEGER PRIMARY KEY, value TEXT NOT NULL)").join();
+            db.execute("INSERT INTO path_guard_test(value) VALUES (?)", "live").join();
+
+            Path backup = db.backup(temp.resolve("backups")).join();
+            Path outside = temp.resolve("outside-backup.db");
+            Files.copy(backup, outside);
+
+            assertThrows(java.util.concurrent.CompletionException.class, () -> db.restore(outside).join());
+            assertEquals("live", db.query("SELECT value FROM path_guard_test WHERE id=1").join()
+                    .getFirst().get("value"));
+        } finally {
+            db.close();
+        }
+    }
+
+    @Test
     void backupAndRestoreRecoverCommittedData(@TempDir Path temp) {
         SqliteDatabaseService db = new SqliteDatabaseService(temp);
         try {
