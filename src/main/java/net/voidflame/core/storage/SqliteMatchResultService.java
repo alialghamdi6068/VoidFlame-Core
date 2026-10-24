@@ -22,6 +22,11 @@ public final class SqliteMatchResultService implements MatchResultService {
 
     @Override
     public void record(MatchResult result) {
+        recordAsync(result);
+    }
+
+    @Override
+    public CompletableFuture<Void> recordAsync(MatchResult result) {
         if (result == null || result.matchId() == null || result.playerA() == null
                 || result.playerB() == null || result.winner() == null || result.loser() == null
                 || result.playerA().equals(result.playerB())
@@ -29,10 +34,10 @@ public final class SqliteMatchResultService implements MatchResultService {
                 || !result.loser().equals(result.playerA()) && !result.loser().equals(result.playerB())
                 || result.winner().equals(result.loser())) {
             logger.warning("Ignored invalid duel match result.");
-            return;
+            return CompletableFuture.completedFuture(null);
         }
 
-        database.query(
+        return database.query(
                 "SELECT uuid, elo FROM player_profiles WHERE uuid IN (?, ?)",
                 result.playerA().toString(), result.playerB().toString()
         ).thenCompose(rows -> {
@@ -65,9 +70,10 @@ public final class SqliteMatchResultService implements MatchResultService {
                     Math.max(0L, result.durationMs()), deltaA, deltaB, now
             ));
             return database.transaction(statements);
-        }).exceptionally(error -> {
-            logger.severe("Failed to persist duel result " + result.matchId() + ": " + error.getMessage());
-            return null;
+        }).whenComplete((ignored, error) -> {
+            if (error != null) {
+                logger.severe("Failed to persist duel result " + result.matchId() + ": " + error.getMessage());
+            }
         });
     }
 
