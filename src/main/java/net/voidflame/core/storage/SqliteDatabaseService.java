@@ -218,6 +218,10 @@ public final class SqliteDatabaseService implements DatabaseService {
                 if (source.equals(file.toAbsolutePath().normalize())) {
                     throw new IllegalArgumentException("Cannot restore the live database file onto itself.");
                 }
+                Path approvedBackups = file.getParent().resolve("backups").toAbsolutePath().normalize();
+                if (!source.getParent().equals(approvedBackups)) {
+                    throw new IllegalArgumentException("Backup must be located directly inside the Core backups directory.");
+                }
 
                 // Verify the backup in read-only mode. Never run migrations against a backup,
                 // because validation must not alter the only recoverable copy of user data.
