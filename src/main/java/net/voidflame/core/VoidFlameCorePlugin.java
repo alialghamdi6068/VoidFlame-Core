@@ -4,6 +4,7 @@ import net.voidflame.core.api.ServiceRegistry;
 import net.voidflame.core.api.EconomyService;
 import net.voidflame.core.api.AuditLogService;
 import net.voidflame.core.api.MatchResultService;
+import net.voidflame.core.api.PartyMatchResultService;
 import net.voidflame.core.config.CoreConfig;
 import net.voidflame.core.logging.CoreLogger;
 import net.voidflame.core.scheduler.CoreScheduler;
@@ -14,6 +15,7 @@ import net.voidflame.core.storage.StorageService;
 import net.voidflame.core.storage.SqliteStorageService;
 import net.voidflame.core.storage.SqliteAuditLogService;
 import net.voidflame.core.storage.SqliteMatchResultService;
+import net.voidflame.core.storage.SqlitePartyMatchResultService;
 import net.voidflame.core.storage.PlayerProfileService;
 import net.voidflame.core.storage.PlayerSettingsService;
 import net.voidflame.core.storage.ServerSettingsService;
@@ -84,8 +86,10 @@ public final class VoidFlameCorePlugin extends JavaPlugin {
         services.register(EconomyService.class, economy);
         AuditLogService auditLogs = new SqliteAuditLogService(database);
         MatchResultService matchResults = new SqliteMatchResultService(database, getLogger());
+        PartyMatchResultService partyMatchResults = new SqlitePartyMatchResultService(database, playerProfiles, getLogger());
         services.register(AuditLogService.class, auditLogs);
         services.register(MatchResultService.class, matchResults);
+        services.register(PartyMatchResultService.class, partyMatchResults);
 
         getServer().getServicesManager().register(ServiceRegistry.class, services, this, ServicePriority.Highest);
         getServer().getServicesManager().register(DatabaseService.class, database, this, ServicePriority.Highest);
@@ -96,6 +100,7 @@ public final class VoidFlameCorePlugin extends JavaPlugin {
         getServer().getServicesManager().register(EconomyService.class, economy, this, ServicePriority.Highest);
         getServer().getServicesManager().register(AuditLogService.class, auditLogs, this, ServicePriority.Highest);
         getServer().getServicesManager().register(MatchResultService.class, matchResults, this, ServicePriority.Highest);
+        getServer().getServicesManager().register(PartyMatchResultService.class, partyMatchResults, this, ServicePriority.Highest);
 
         WorldCommands worldCommands = new WorldCommands(worlds);
         getCommand("spawn").setExecutor(worldCommands);
