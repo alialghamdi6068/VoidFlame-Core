@@ -1,5 +1,7 @@
 package net.voidflame.core.storage;
 
+import net.voidflame.core.api.MatchResultService;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
