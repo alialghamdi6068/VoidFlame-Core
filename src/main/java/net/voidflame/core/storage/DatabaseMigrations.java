@@ -389,8 +389,46 @@ final class DatabaseMigrations {
                             END)
                         WHERE uuid IN (NEW.winner, NEW.loser);
                     END;
+                    """),
+                new Migration(14, """
+                    CREATE TABLE IF NOT EXISTS party_matches (
+                        match_id TEXT PRIMARY KEY,
+                        kit TEXT NOT NULL,
+                        mode TEXT NOT NULL,
+                        arena TEXT NOT NULL,
+                        duration_ms INTEGER NOT NULL DEFAULT 0,
+                        timestamp INTEGER NOT NULL
+                    );
+                    CREATE TABLE IF NOT EXISTS party_match_players (
+                        match_id TEXT NOT NULL,
+                        uuid TEXT NOT NULL,
+                        result TEXT NOT NULL CHECK(result IN ('WIN', 'LOSS')),
+                        PRIMARY KEY(match_id, uuid),
+                        FOREIGN KEY(match_id) REFERENCES party_matches(match_id) ON DELETE CASCADE,
+                        FOREIGN KEY(uuid) REFERENCES player_profiles(uuid) ON DELETE CASCADE
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_party_matches_timestamp ON party_matches(timestamp DESC);
+                    CREATE INDEX IF NOT EXISTS idx_party_match_players_uuid ON party_match_players(uuid, result);
+                    """),
+                new Migration(15, """
+                    CREATE TRIGGER IF NOT EXISTS trg_party_match_stats_after_insert
+                    AFTER INSERT ON party_match_players
+                    WHEN NEW.result IN ('WIN', 'LOSS')
+                    BEGIN
+                        UPDATE player_profiles SET
+                            wins = wins + CASE WHEN NEW.result = 'WIN' THEN 1 ELSE 0 END,
+                            losses = losses + CASE WHEN NEW.result = 'LOSS' THEN 1 ELSE 0 END,
+                            winstreak = CASE
+                                WHEN NEW.result = 'WIN' THEN winstreak + 1
+                                ELSE 0
+                            END,
+                            best_winstreak = CASE
+                                WHEN NEW.result = 'WIN' THEN MAX(best_winstreak, winstreak + 1)
+                                ELSE best_winstreak
+                            END
+                        WHERE uuid = NEW.uuid;
+                    END;
                     """)
-
         );
 
         for (Migration migration : migrations) {
