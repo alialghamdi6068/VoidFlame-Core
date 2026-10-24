@@ -38,8 +38,7 @@ class SqliteDatabaseServiceTest {
             }
 
             assertThrows(java.util.concurrent.CompletionException.class, () -> db.restore(link).join());
-            assertTrue(Files.isRegularFile(db.databasePath() == null ? temp.resolve("database.db")
-                    : Path.of(db.databasePath())));
+            assertTrue(Files.isRegularFile(Path.of(db.databasePath())));
         } finally {
             db.close();
         }
