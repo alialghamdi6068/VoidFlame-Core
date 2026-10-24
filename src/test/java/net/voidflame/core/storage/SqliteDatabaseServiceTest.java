@@ -28,6 +28,8 @@ class SqliteDatabaseServiceTest {
     void restoreRejectsSymbolicLinkBackups(@TempDir Path temp) throws Exception {
         SqliteDatabaseService db = new SqliteDatabaseService(temp);
         try {
+            db.execute("CREATE TABLE IF NOT EXISTS symlink_test(id INTEGER PRIMARY KEY, value TEXT NOT NULL)").join();
+            db.execute("INSERT INTO symlink_test(value) VALUES (?)", "preserved").join();
             Path backups = temp.resolve("backups");
             Path backup = db.backup(backups).join();
             Path link = backups.resolve("linked-backup.db");
@@ -39,6 +41,8 @@ class SqliteDatabaseServiceTest {
 
             assertThrows(java.util.concurrent.CompletionException.class, () -> db.restore(link).join());
             assertTrue(Files.isRegularFile(Path.of(db.databasePath())));
+            assertEquals("preserved", db.query("SELECT value FROM symlink_test WHERE id=1").join()
+                    .getFirst().get("value"));
         } finally {
             db.close();
         }
