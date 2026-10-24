@@ -2,10 +2,16 @@ package net.voidflame.core.api;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 /** Typed service for team/FFA match results that cannot be represented by 1v1 MatchResult. */
 public interface PartyMatchResultService {
     void record(PartyMatchResult result);
+
+    default CompletableFuture<Void> recordAsync(PartyMatchResult result) {
+        record(result);
+        return CompletableFuture.completedFuture(null);
+    }
 
     record PartyMatchResult(
             UUID matchId,
