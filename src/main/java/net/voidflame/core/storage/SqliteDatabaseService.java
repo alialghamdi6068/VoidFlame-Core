@@ -207,10 +207,14 @@ public final class SqliteDatabaseService implements DatabaseService {
         return CompletableFuture.runAsync(() -> {
             lifecycleLock.writeLock().lock();
             try {
-                if (backupFile == null || !Files.isRegularFile(backupFile)) {
-                    throw new IllegalArgumentException("Backup file does not exist: " + backupFile);
+                if (backupFile == null) {
+                    throw new IllegalArgumentException("Backup file does not exist: null");
                 }
                 Path source = backupFile.toAbsolutePath().normalize();
+                if (Files.isSymbolicLink(backupFile) || Files.isSymbolicLink(source)
+                        || !Files.isRegularFile(source, java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
+                    throw new IllegalArgumentException("Backup must be a regular, non-symbolic-link file: " + backupFile);
+                }
                 if (source.equals(file.toAbsolutePath().normalize())) {
                     throw new IllegalArgumentException("Cannot restore the live database file onto itself.");
                 }
