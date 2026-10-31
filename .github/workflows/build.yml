@@ -1,4 +1,4 @@
-name: Build VoidFlame-Core SMP verification
+name: Build VoidFlame-Core Practice & Duels verification
 
 on:
   push:
