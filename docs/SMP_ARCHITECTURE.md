@@ -1,6 +1,14 @@
-# VoidFlameMC SMP — Canonical Project Specification
+# ARCHIVED — Superseded VoidFlameMC SMP Proposal
 
-This file is the source of truth for the current project direction. The old Practice/Duels design is retired and must not be used as the product specification for new work.
+> **Not active. Do not use this document as the server specification.**
+>
+> The SMP proposal below is retained only as historical reference. The active product is **VoidFlameMC Practice & Duels**, not SMP or survival. The active architecture is defined by the four repositories VoidFlame-Core, VoidFlame-Duels, VoidFlame-Admin, and VoidFlame-Security. New work must follow the active Practice/Duels README and must not introduce SMP systems or the nine-plugin layout.
+
+---
+
+# Historical SMP Proposal (Inactive)
+
+The following content is an archived proposal and does not override the active Practice/Duels requirements.
 
 ## Identity and platform
 
