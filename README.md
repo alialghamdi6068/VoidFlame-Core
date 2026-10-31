@@ -14,12 +14,12 @@ The shared persistence and integration foundation for **VoidFlameMC Practice & D
 
 ## Practice modules that consume Core
 
-- VoidFlame-Duels
-- VoidFlame-Admin
-- VoidFlame-Duels (owns arenas, kits, queues, matchmaking and match lifecycle)
-- VoidFlame-Security
+- VoidFlame-Core — shared database, migrations, backups, APIs and common services.
+- VoidFlame-Duels — owns arenas, kits, queues, matchmaking, FFA and match lifecycle.
+- VoidFlame-Admin — staff tools, moderation and administration.
+- VoidFlame-Security — AntiBot, rate limits and plugin-level exploit protection.
 
-Feature plugins must consume Core services and must not create per-plugin SQLite databases. LuckPerms may be used to grant permissions; it does not replace the Practice/Ranks feature requirements.
+Feature plugins must consume Core services and must not create per-plugin SQLite databases. LuckPerms may be used for permission inheritance. Do not add standalone feature-plugin repositories outside the four-plugin architecture.
 
 ## Data and compatibility
 
